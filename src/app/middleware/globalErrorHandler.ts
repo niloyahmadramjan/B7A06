@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import { Prisma } from "../../generated/prisma/client";
 import config from "../config";
+import { AppError } from "../utils/AppError";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const globalErrorHandler = async (
@@ -19,20 +20,23 @@ export const globalErrorHandler = async (
 	const errorName = err.name || "Internal Server Error";
 	// let errorDetails = err.stack
 
-	if (err instanceof Prisma.PrismaClientValidationError) {
+	if (err instanceof AppError) {
+		statusCode = err.statusCode;
+		errorMessage = err.message;
+	} else if (err instanceof Prisma.PrismaClientValidationError) {
 		statusCode = httpStatus.BAD_REQUEST;
 		errorMessage = "You have provided incorrect field type or missing fields";
 	} else if (err instanceof Prisma.PrismaClientKnownRequestError) {
 		if (err.code === "P2002") {
-			(statusCode = httpStatus.BAD_REQUEST),
-				(errorMessage = "Duplicate Key Error");
+			statusCode = httpStatus.BAD_REQUEST;
+			errorMessage = "Duplicate Key Error";
 		} else if (err.code === "P2003") {
-			(statusCode = httpStatus.BAD_REQUEST),
-				(errorMessage = "Foreign key constraint failed");
+			statusCode = httpStatus.BAD_REQUEST;
+			errorMessage = "Foreign key constraint failed";
 		} else if (err.code === "P2025") {
-			(statusCode = httpStatus.BAD_REQUEST),
-				(errorMessage =
-					"An operation failed because it depends on one or more records that were required but not found.");
+			statusCode = httpStatus.BAD_REQUEST;
+			errorMessage =
+				"An operation failed because it depends on one or more records that were required but not found.";
 		}
 	} else if (err instanceof Prisma.PrismaClientInitializationError) {
 		if (err.errorCode === "P1000") {

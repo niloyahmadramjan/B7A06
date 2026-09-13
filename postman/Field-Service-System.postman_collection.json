@@ -1,0 +1,145 @@
+{
+	"info": {
+		"name": "Field Service System API",
+		"description": "Requests for the currently available authentication endpoints. Run Register or Login first; their tests save the access and refresh tokens as collection variables.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000"
+		},
+		{
+			"key": "accessToken",
+			"value": ""
+		},
+		{
+			"key": "refreshToken",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "{{baseUrl}}/"
+			}
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  const response = pm.response.json();",
+									"  pm.collectionVariables.set('accessToken', response.data.accessToken);",
+									"  pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Postman Test User\",\n  \"phone\": \"+60123456789\",\n  \"email\": \"postman@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/auth/register"
+					}
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const response = pm.response.json();",
+									"  pm.collectionVariables.set('accessToken', response.data.accessToken);",
+									"  pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"identifier\": \"+60123456789\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/auth/login"
+					}
+				},
+				{
+					"name": "Get My Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/auth/me"
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const response = pm.response.json();",
+									"  pm.collectionVariables.set('accessToken', response.data.accessToken);",
+									"  pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/auth/refresh-token"
+					}
+				}
+			]
+		}
+	]
+}

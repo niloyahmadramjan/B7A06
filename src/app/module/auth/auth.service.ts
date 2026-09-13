@@ -1,8 +1,10 @@
 import bcrypt from "bcryptjs";
+import httpStatus from "http-status";
 import type { JwtPayload, SignOptions } from "jsonwebtoken";
 import { UserRole, UserStatus } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
+import { AppError } from "../../utils/AppError";
 import { jwtUtils } from "../../utils/jwt";
 import type {
 	ILoginUserPayload,
@@ -43,16 +45,25 @@ const createTokens = (user: {
 
 const registerUser = async (payload: IRegisterUserPayload) => {
 	if (!payload.name?.trim() || !payload.phone?.trim() || !payload.password)
-		throw new Error("Name, phone, and password are required");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Name, phone, and password are required",
+		);
 	if (payload.password.length < 8)
-		throw new Error("Password must be at least 8 characters long");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Password must be at least 8 characters long",
+		);
 	const email = normalizeEmail(payload.email);
 	const phone = normalizePhone(payload.phone);
 	const existing = await prisma.user.findFirst({
 		where: { OR: [{ phone }, ...(email ? [{ email }] : [])] },
 	});
 	if (existing)
-		throw new Error("A user with this phone or email already exists");
+		throw new AppError(
+			httpStatus.CONFLICT,
+			"A user with this phone or email already exists",
+		);
 
 	const user = await prisma.user.create({
 		data: {
@@ -72,7 +83,10 @@ const registerUser = async (payload: IRegisterUserPayload) => {
 
 const loginUser = async (payload: ILoginUserPayload) => {
 	if (!payload.identifier?.trim() || !payload.password)
-		throw new Error("Identifier and password are required");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Identifier and password are required",
+		);
 	const identifier = payload.identifier.trim();
 	const email = normalizeEmail(identifier);
 	const user = await prisma.user.findFirst({
@@ -82,9 +96,9 @@ const loginUser = async (payload: ILoginUserPayload) => {
 		!user?.passwordHash ||
 		!(await bcrypt.compare(payload.password, user.passwordHash))
 	)
-		throw new Error("Invalid credentials");
+		throw new AppError(httpStatus.UNAUTHORIZED, "Invalid credentials");
 	if (user.status !== UserStatus.ACTIVE)
-		throw new Error("User account is not active");
+		throw new AppError(httpStatus.FORBIDDEN, "User account is not active");
 
 	await prisma.user.update({
 		where: { id: user.id },
@@ -99,19 +113,19 @@ const getMe = async (user: IRequestUser) => {
 		where: { id: user.userId },
 		omit: safeUser,
 	});
-	if (!found) throw new Error("User not found");
+	if (!found) throw new AppError(httpStatus.NOT_FOUND, "User not found");
 	return found;
 };
 
 const refreshToken = async (token: string) => {
 	const verified = jwtUtils.verifyToken(token, config.jwt_refresh_secret);
 	if (!verified.success || !verified.data)
-		throw new Error("Invalid refresh token");
+		throw new AppError(httpStatus.UNAUTHORIZED, "Invalid refresh token");
 	const user = await prisma.user.findUnique({
 		where: { id: (verified.data as JwtPayload).userId },
 	});
 	if (!user || user.status !== UserStatus.ACTIVE)
-		throw new Error("User account is not active");
+		throw new AppError(httpStatus.FORBIDDEN, "User account is not active");
 	return createTokens(user);
 };
 
