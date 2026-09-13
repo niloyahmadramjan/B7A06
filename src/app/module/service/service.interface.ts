@@ -1,11 +1,8 @@
-
-
 export interface servicePayload {
-    name: string
-    description: string
-    price: string
+	name: string;
+	description: string;
+	price: string;
 }
-
 
 export interface IQuery {
 	searchTerm?: string;

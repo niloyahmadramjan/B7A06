@@ -1,5 +1,5 @@
 export interface ICustomerPayload {
-  address: string;
-  city: string;
-  district: string;
+	address: string;
+	city: string;
+	district: string;
 }
