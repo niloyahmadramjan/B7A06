@@ -11,6 +11,11 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  customer     Customer?
+  technician   Technician?
+
+  assignedBy   TechnicianAssignment[]
+
   @@index([role])
   @@index([status])
   @@index([phone])

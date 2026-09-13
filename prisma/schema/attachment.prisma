@@ -1,0 +1,20 @@
+model Attachment {
+  id String @id @default(cuid())
+
+  requestId   String?
+  workOrderId String?
+
+  type AttachmentType
+
+  fileName String
+  fileUrl  String
+
+  createdAt DateTime @default(now())
+
+  request ServiceRequest? @relation(fields: [requestId],references: [id],onDelete: Cascade)
+
+  workOrder WorkOrder? @relation(fields: [workOrderId],references: [id],onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([workOrderId])
+}

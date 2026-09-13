@@ -1,0 +1,26 @@
+model ServiceVisit {
+  id String @id @default(cuid())
+
+  workOrderId  String
+  technicianId String
+
+  scheduledStart DateTime
+  scheduledEnd   DateTime?
+
+  actualStart DateTime?
+  actualEnd   DateTime?
+
+  status VisitStatus @default(SCHEDULED)
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workOrder WorkOrder @relation(fields: [workOrderId],references: [id],onDelete: Cascade)
+
+  technician Technician @relation(fields: [technicianId],references: [id],onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([technicianId])
+}

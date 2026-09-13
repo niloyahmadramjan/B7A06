@@ -1,0 +1,21 @@
+model Feedback {
+  id String @id @default(cuid())
+
+  workOrderId  String @unique
+  customerId   String
+  technicianId String?
+
+  rating  Int
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId],references: [id],onDelete: Cascade)
+
+  customer Customer @relation(fields: [customerId],references: [id],onDelete: Cascade)
+
+  technician Technician? @relation(fields: [technicianId],references: [id],onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([technicianId])
+}

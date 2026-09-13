@@ -1,0 +1,27 @@
+model Invoice {
+  id String @id @default(cuid())
+
+  invoiceNumber String @unique
+
+  workOrderId String @unique
+  customerId  String
+
+  amount Decimal @db.Decimal(10, 2)
+
+  status InvoiceStatus @default(DRAFT)
+
+  issuedAt DateTime?
+  dueDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workOrder WorkOrder @relation(fields: [workOrderId],references: [id],onDelete: Cascade)
+
+  customer Customer @relation(fields: [customerId],references: [id])
+
+  payments Payment[]
+
+  @@index([customerId])
+  @@index([status])
+}

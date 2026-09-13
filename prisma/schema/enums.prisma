@@ -1,11 +1,78 @@
+// ====================
+// ENUMS
+// ====================
+
 enum UserRole {
-  CUSTOMER
-  TECHNICIAN
-  MANAGER
   ADMIN
+  MANAGER
+  TECHNICIAN
+  CUSTOMER
 }
 
 enum UserStatus {
   ACTIVE
-  BLOCKED
+  INACTIVE
 }
+
+enum TechnicianStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+enum ServiceRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum WorkOrderStatus {
+  CREATED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AssignmentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum VisitStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AttachmentType {
+  IMAGE
+  DOCUMENT
+  OTHER
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  BKASH
+  NAGAD
+  OTHER
+}
+

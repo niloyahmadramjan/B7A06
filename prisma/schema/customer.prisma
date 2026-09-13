@@ -1,0 +1,18 @@
+model Customer {
+  id       String @id @default(cuid())
+  userId   String @unique
+
+  address  String
+  city     String?
+  district String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User @relation( fields: [userId], references: [id], onDelete: Cascade)
+
+  serviceRequests ServiceRequest[]
+  workOrders      WorkOrder[]
+  invoices        Invoice[]
+  feedbacks       Feedback[]
+}

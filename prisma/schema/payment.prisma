@@ -1,0 +1,21 @@
+model Payment {
+  id String @id @default(cuid())
+
+  invoiceId String
+
+  amount Decimal @db.Decimal(10, 2)
+
+  method PaymentMethod
+  status PaymentStatus @default(PENDING)
+
+  transactionId String? @unique
+
+  paidAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId],references: [id],onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([status])
+}

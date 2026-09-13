@@ -1,0 +1,40 @@
+model WorkOrder {
+  id String @id @default(cuid())
+
+  workOrderNumber String @unique
+
+  requestId    String @unique
+  customerId   String
+  technicianId String?
+
+  title       String
+  description String?
+
+  status WorkOrderStatus @default(CREATED)
+
+  estimatedCost Decimal? @db.Decimal(10, 2)
+  actualCost    Decimal? @db.Decimal(10, 2)
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  request ServiceRequest @relation(fields: [requestId],references: [id],onDelete: Cascade)
+
+  customer Customer @relation(fields: [customerId],references: [id])
+
+  technician Technician? @relation(fields: [technicianId],references: [id],onDelete: SetNull)
+
+  assignments   TechnicianAssignment[]
+  visits        ServiceVisit[]
+  serviceReport ServiceReport?
+  attachments   Attachment[]
+  invoice       Invoice?
+  feedback      Feedback?
+
+  @@index([customerId])
+  @@index([technicianId])
+  @@index([status])
+}
