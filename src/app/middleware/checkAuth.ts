@@ -8,15 +8,17 @@ import { AppError } from "../utils/AppError";
 import { catchAsync } from "../utils/catchAsync";
 import { jwtUtils } from "../utils/jwt";
 
+export interface RequestUser {
+	email: string;
+	name: string;
+	userId: string;
+	role: UserRole;
+}
+
 declare global {
 	namespace Express {
 		interface Request {
-			user?: {
-				email: string | null;
-				name: string;
-				userId: string;
-				role: UserRole;
-			};
+			user?: RequestUser;
 		}
 	}
 }
@@ -75,7 +77,7 @@ export const auth = (...requiredRoles: UserRole[]) => {
 		}
 
 		req.user = {
-			email: user.email,
+			email: user.email as string,
 			name: user.name,
 			userId,
 			role,
