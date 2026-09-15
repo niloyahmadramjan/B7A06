@@ -5,6 +5,8 @@ import { RequestUser } from "../../middleware/checkAuth";
 import { ICreateServiceRequest } from "./request.interface";
 import crypto from "crypto";
 import { ServiceRequestStatus } from "../../../generated/prisma/enums";
+import { IQuery } from "../service/service.interface";
+import { ServiceRequestWhereInput } from "../../../generated/prisma/models";
 
 const createRequest = async (
   payload: ICreateServiceRequest,
@@ -54,7 +56,7 @@ const createRequest = async (
   return createRequest;
 };
 
-const getAllRequests = async (user: RequestUser) => {
+const getAllRequests = async (user: RequestUser, query: IQuery) => {
   const existingCustomer = await prisma.customer.findUnique({
     where: {
       userId: user.userId,
@@ -65,16 +67,49 @@ const getAllRequests = async (user: RequestUser) => {
     throw new AppError(httpstatus.NOT_FOUND, "Customer profile not found");
   }
 
-  const requests = await prisma.serviceRequest.findMany({
-    where: {
+  // and condition for search
+
+  const limit = query.limit ? Number(query.limit) : 10;
+  const page = query.page ? Number(query.page) : 1;
+  const skip = (page - 1) * limit;
+  const sortBy = query.sortBy ? query.sortBy : "createdAt";
+  const sortOrder = query.sortOrder ? query.sortOrder : "desc";
+
+  const andConditions: ServiceRequestWhereInput[] = [
+    {
       customerId: existingCustomer.id,
     },
+  ];
+
+  if (query.searchTerm) {
+    andConditions.push({
+      OR: [{ title: { contains: query.searchTerm, mode: "insensitive" } }],
+    });
+  }
+
+  const requests = await prisma.serviceRequest.findMany({
+    where: {
+      AND: andConditions,
+    },
+    skip,
     orderBy: {
-      createdAt: "desc",
+      [sortBy]: sortOrder,
     },
   });
 
-  return requests;
+  const totalAvailableServices = await prisma.serviceRequest.count({
+        where: { AND: andConditions },
+    });
+  
+    return {
+        data: requests,
+        meta: {
+            page,
+            limit,
+            total: totalAvailableServices,
+            totalPages: Math.ceil(totalAvailableServices / limit),
+        },
+    };
 };
 const getRequestById = async (requestId: string, user: RequestUser) => {
   const existingCustomer = await prisma.customer.findUnique({
@@ -159,8 +194,11 @@ const deleteRequest = async (requestId: string, user: RequestUser) => {
   if (!existingRequest) {
     throw new AppError(httpstatus.NOT_FOUND, "Request not found");
   }
-  if(existingRequest.status !== ServiceRequestStatus.PENDING) {
-    throw new AppError(httpstatus.BAD_REQUEST, "Only pending requests can be deleted");
+  if (existingRequest.status !== ServiceRequestStatus.PENDING) {
+    throw new AppError(
+      httpstatus.BAD_REQUEST,
+      "Only pending requests can be deleted",
+    );
   }
 
   await prisma.serviceRequest.delete({
@@ -173,10 +211,7 @@ const deleteRequest = async (requestId: string, user: RequestUser) => {
   return { message: "Request deleted successfully" };
 };
 
-
-
-
-const requestService = {
+export const requestService = {
   createRequest,
   getAllRequests,
   getRequestById,
