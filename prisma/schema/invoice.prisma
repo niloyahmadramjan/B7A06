@@ -1,5 +1,5 @@
 model Invoice {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   invoiceNumber String @unique
 

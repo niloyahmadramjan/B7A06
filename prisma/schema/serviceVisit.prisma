@@ -1,5 +1,5 @@
 model ServiceVisit {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   workOrderId  String
   technicianId String

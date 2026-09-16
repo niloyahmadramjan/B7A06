@@ -1,5 +1,5 @@
 model Payment {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   invoiceId String
 

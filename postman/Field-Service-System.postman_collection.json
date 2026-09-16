@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Field Service System API",
-		"description": "Requests for the currently available authentication endpoints. Run Register or Login first; their tests save the access and refresh tokens as collection variables.",
+		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests -> Work Orders -> Assignments -> Service Visits -> Service Reports -> Invoices. Resource IDs are captured automatically via test scripts.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -15,6 +15,42 @@
 		},
 		{
 			"key": "refreshToken",
+			"value": ""
+		},
+		{
+			"key": "serviceId",
+			"value": ""
+		},
+		{
+			"key": "requestId",
+			"value": ""
+		},
+		{
+			"key": "workOrderId",
+			"value": ""
+		},
+		{
+			"key": "customerId",
+			"value": ""
+		},
+		{
+			"key": "technicianId",
+			"value": ""
+		},
+		{
+			"key": "assignmentId",
+			"value": ""
+		},
+		{
+			"key": "visitId",
+			"value": ""
+		},
+		{
+			"key": "reportId",
+			"value": ""
+		},
+		{
+			"key": "invoiceId",
 			"value": ""
 		}
 	],
@@ -137,6 +173,829 @@
 							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
 						},
 						"url": "{{baseUrl}}/api/v1/auth/refresh-token"
+					}
+				}
+			]
+		},
+		{
+			"name": "Services",
+			"description": "Admin/Manager only (except Get All Services), authenticated with accessToken.",
+			"item": [
+				{
+					"name": "Create Service",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  pm.collectionVariables.set('serviceId', pm.response.json().data.createServiceResult.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"AC Repair Service\",\n  \"description\": \"Complete AC compressor check and repair\",\n  \"price\": \"1500\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/service/create"
+					}
+				},
+				{
+					"name": "Get All Services",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/v1/service/get-all?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Update Service",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"AC Repair Service\",\n  \"description\": \"Updated description for AC repair service\",\n  \"price\": \"1800\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/service/update/{{serviceId}}"
+					}
+				},
+				{
+					"name": "Delete Service",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{baseUrl}}/api/v1/service/delete/{{serviceId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Customers",
+			"description": "Customer only, authenticated with accessToken.",
+			"item": [
+				{
+					"name": "Get Customer Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  pm.collectionVariables.set('customerId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/customer/get"
+					}
+				},
+				{
+					"name": "Update Customer Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"address\": \"House 12, Road 5, Dhanmondi\",\n  \"city\": \"Dhaka\",\n  \"district\": \"Dhaka\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/customer/update"
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Requests",
+			"description": "Customer only, authenticated with accessToken.",
+			"item": [
+				{
+					"name": "Create Service Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  pm.collectionVariables.set('requestId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"AC not cooling properly\",\n  \"description\": \"AC compressor was not working properly\",\n  \"preferredDate\": \"2026-09-20T10:00:00.000Z\",\n  \"address\": \"House 12, Road 5, Dhanmondi\",\n  \"city\": \"Dhaka\",\n  \"district\": \"Dhaka\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/request/service/{{serviceId}}"
+					}
+				},
+				{
+					"name": "Get All Requests",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/request?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Request By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/request/{{requestId}}"
+					}
+				},
+				{
+					"name": "Update Request",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"AC compressor stopped working after servicing\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/request/{{requestId}}"
+					}
+				},
+				{
+					"name": "Delete Request",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/request/{{requestId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Work Orders",
+			"description": "Admin/Manager only, authenticated with accessToken.",
+			"item": [
+				{
+					"name": "Create Work Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  pm.collectionVariables.set('workOrderId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"title\": \"AC Repair Work Order\",\n  \"description\": \"Repair AC compressor and wiring\",\n  \"estimatedCost\": \"1500\"\n}"
+						},
+						"url": "{{baseUrl}}/api/work-orders"
+					}
+				},
+				{
+					"name": "Get All Work Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/work-orders?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Work Order By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
+					}
+				},
+				{
+					"name": "Assign Technician (CREATED -> ASSIGNED)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"technicianId\": \"{{technicianId}}\"\n}"
+						},
+						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
+					}
+				},
+				{
+					"name": "Start Work Order (ASSIGNED -> IN_PROGRESS)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+						},
+						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
+					}
+				},
+				{
+					"name": "Set Actual Cost",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"actualCost\": \"1800\"\n}"
+						},
+						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
+					}
+				},
+				{
+					"name": "Delete Work Order",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Assignments",
+			"description": "Create/Delete by Admin/Manager, respond by Technician, authenticated with accessToken.",
+			"item": [
+				{
+					"name": "Create Assignment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  pm.collectionVariables.set('assignmentId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"technicianId\": \"{{technicianId}}\"\n}"
+						},
+						"url": "{{baseUrl}}/api/assignments"
+					}
+				},
+				{
+					"name": "Get All Assignments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/assignments?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Assignment By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/assignments/{{assignmentId}}"
+					}
+				},
+				{
+					"name": "Respond to Assignment (Technician)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"ACCEPTED\"\n}"
+						},
+						"url": "{{baseUrl}}/api/assignments/{{assignmentId}}"
+					}
+				},
+				{
+					"name": "Delete Assignment",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/assignments/{{assignmentId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Visits",
+			"description": "Create/Delete by Admin/Manager, status updates by Technician, authenticated with accessToken.",
+			"item": [
+				{
+					"name": "Create Service Visit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  pm.collectionVariables.set('visitId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"technicianId\": \"{{technicianId}}\",\n  \"scheduledStart\": \"2026-09-20T10:00:00.000Z\",\n  \"scheduledEnd\": \"2026-09-20T12:00:00.000Z\",\n  \"notes\": \"Visit scheduled for AC repair\"\n}"
+						},
+						"url": "{{baseUrl}}/api/service-visits"
+					}
+				},
+				{
+					"name": "Get All Service Visits",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/service-visits?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Service Visit By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/service-visits/{{visitId}}"
+					}
+				},
+				{
+					"name": "Start Visit (SCHEDULED -> IN_PROGRESS)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+						},
+						"url": "{{baseUrl}}/api/service-visits/{{visitId}}"
+					}
+				},
+				{
+					"name": "Complete Visit (IN_PROGRESS -> COMPLETED)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"COMPLETED\"\n}"
+						},
+						"url": "{{baseUrl}}/api/service-visits/{{visitId}}"
+					}
+				},
+				{
+					"name": "Delete Service Visit",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/service-visits/{{visitId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Reports",
+			"description": "Techician/Admin/Manager can create and view; creating a report marks the work order COMPLETED. Authenticated with accessToken.",
+			"item": [
+				{
+					"name": "Create Service Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  pm.collectionVariables.set('reportId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"technicianId\": \"{{technicianId}}\",\n  \"diagnosis\": \"AC compressor was not working properly\",\n  \"workPerformed\": \"Checked compressor and repaired the wiring\",\n  \"notes\": \"AC is working normally now\"\n}"
+						},
+						"url": "{{baseUrl}}/api/service-reports"
+					}
+				},
+				{
+					"name": "Get All Service Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/service-reports?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Service Report By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/service-reports/{{reportId}}"
+					}
+				},
+				{
+					"name": "Update Service Report",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notes\": \"Technician asked to follow up in one week\"\n}"
+						},
+						"url": "{{baseUrl}}/api/service-reports/{{reportId}}"
+					}
+				},
+				{
+					"name": "Delete Service Report",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/service-reports/{{reportId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Invoices",
+			"description": "Create/Update/Delete by Admin/Manager, view by Admin/Manager/Customer. Amount is auto-calculated as Service Price + (actualCost ?? estimatedCost ?? 0) unless an explicit amount is sent. Authenticated with accessToken.",
+			"item": [
+				{
+					"name": "Create Invoice",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  pm.collectionVariables.set('invoiceId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"status\": \"DRAFT\",\n  \"dueDate\": \"2026-10-20T00:00:00.000Z\"\n}"
+						},
+						"url": "{{baseUrl}}/api/invoices"
+					}
+				},
+				{
+					"name": "Get All Invoices",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/invoices?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Invoice By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/invoices/{{invoiceId}}"
+					}
+				},
+				{
+					"name": "Update Invoice",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"ISSUED\"\n}"
+						},
+						"url": "{{baseUrl}}/api/invoices/{{invoiceId}}"
+					}
+				},
+				{
+					"name": "Mark Invoice As Paid",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"PAID\"\n}"
+						},
+						"url": "{{baseUrl}}/api/invoices/{{invoiceId}}"
+					}
+				},
+				{
+					"name": "Delete Invoice",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/invoices/{{invoiceId}}"
 					}
 				}
 			]

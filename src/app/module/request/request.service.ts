@@ -1,12 +1,12 @@
 import httpstatus from "http-status";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
-import { RequestUser } from "../../middleware/checkAuth";
-import { ICreateServiceRequest } from "./request.interface";
-import crypto from "crypto";
+import type { RequestUser } from "../../middleware/checkAuth";
+import type { ICreateServiceRequest } from "./request.interface";
+import crypto from "node:crypto";
 import { ServiceRequestStatus } from "../../../generated/prisma/enums";
-import { IQuery } from "../service/service.interface";
-import { ServiceRequestWhereInput } from "../../../generated/prisma/models";
+import type { IQuery } from "../service/service.interface";
+import type { ServiceRequestWhereInput } from "../../../generated/prisma/models";
 
 const createRequest = async (
   payload: ICreateServiceRequest,

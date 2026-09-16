@@ -1,5 +1,5 @@
 model ServiceRequest {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   requestNumber String @unique
 

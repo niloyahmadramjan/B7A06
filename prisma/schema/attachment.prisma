@@ -1,5 +1,5 @@
 model Attachment {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   requestId   String?
   workOrderId String?

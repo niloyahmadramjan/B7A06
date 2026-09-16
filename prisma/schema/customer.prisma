@@ -1,5 +1,5 @@
 model Customer {
-  id       String @id @default(cuid())
+  id       String @id @default(uuid())
   userId   String @unique
 
   address  String

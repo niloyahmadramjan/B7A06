@@ -6,7 +6,7 @@ import type { ICustomerPayload } from "./customer.interface";
 const getCustomerProfile = async (id: string) => {
 	const customerProfile = await prisma.customer.findUnique({
 		where: {
-			id,
+			userId: id,
 		},
 	});
 	if (!customerProfile) {
@@ -26,7 +26,7 @@ const updateCusomerProfile = async (payload: ICustomerPayload, id: string) => {
 	}
 	const updateCusomerProfile = await prisma.customer.update({
 		where: { id: existingCustomerData.id },
-		data: { payload },
+		data: payload,
 	});
 
 	return updateCusomerProfile;

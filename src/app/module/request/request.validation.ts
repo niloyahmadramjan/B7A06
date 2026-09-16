@@ -1,14 +1,6 @@
 import { z } from "zod";
 
 export const createServiceRequestSchema = z.object({
-  customerId: z
-    .string()
-    .min(1, "Customer ID is required"),
-
-  serviceId: z
-    .string()
-    .min(1, "Service ID is required"),
-
   title: z
     .string()
     .min(3, "Title must be at least 3 characters")
@@ -75,10 +67,10 @@ export const updateServiceRequestSchema = z.object({
 
   status: z.enum([
     "PENDING",
-    "ACCEPTED",
-    "ASSIGNED",
-    "IN_PROGRESS",
-    "COMPLETED",
+    "APPROVED",
+    "REJECTED",
     "CANCELLED",
   ]).optional(),
+}).refine((data) => Object.keys(data).length > 0, {
+  message: "At least one field is required",
 });

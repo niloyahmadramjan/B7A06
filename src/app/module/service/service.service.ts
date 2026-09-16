@@ -21,7 +21,7 @@ const serviceCreate = async (servicePayload: servicePayload) => {
 
 	const createServiceResult = await prisma.service.create({
 		data: {
-			name: serviceCreate.name,
+			name: servicePayload.name,
 			description: servicePayload.description,
 			price: servicePayload.price,
 		},
@@ -86,7 +86,7 @@ const updateService = async (payload: servicePayload, id: string) => {
 			id,
 		},
 		data: {
-			payload,
+			...payload,
 		},
 	});
 	return updateServiceResult;

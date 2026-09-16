@@ -1,4 +1,4 @@
-import { ServiceRequestStatus } from "../../../generated/prisma/enums";
+import type { ServiceRequestStatus } from "../../../generated/prisma/enums";
 
 export interface ICreateServiceRequest {
   customerId: string;
