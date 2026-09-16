@@ -16,6 +16,7 @@ import { requestRouter } from "./app/module/request/request.route";
 import { workOrderRouter } from "./app/module/work-order/work-order.route";
 import { assignmentRouter } from "./app/module/assignment/assignment.route";
 import { serviceVisitRouter } from "./app/module/service-visit/service-visit.route";
+import { serviceReportRouter } from "./app/module/service-report/service-report.route";
 
 const app: Application = express();
 
@@ -40,6 +41,7 @@ app.use("/api/v1/request", requestRouter);
 app.use("/api/work-orders", workOrderRouter);
 app.use("/api/assignments", assignmentRouter);
 app.use("/api/service-visits", serviceVisitRouter);
+app.use("/api/service-reports", serviceReportRouter);
 
 
 // Basic route
