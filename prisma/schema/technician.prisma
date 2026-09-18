@@ -5,6 +5,12 @@ model Technician {
   employeeId String? @unique
   status     TechnicianStatus @default(AVAILABLE)
 
+  applicationStatus TechnicianApplicationStatus @default(PENDING)
+
+  skills        String?
+  bio           String?
+  rejectedReason String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -15,4 +21,6 @@ model Technician {
   visits         ServiceVisit[]
   serviceReports ServiceReport[]
   feedbacks      Feedback[]
+
+  @@index([applicationStatus])
 }

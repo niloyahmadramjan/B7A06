@@ -70,10 +70,67 @@ const deleteRequest = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllRequestsForReview = catchAsync(
+  async (req: Request, res: Response) => {
+    const query = req.query;
+
+    const result = await requestService.getAllRequestsForReview(query);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Requests retrieved successfully for review",
+      data: result.data,
+      meta: result.meta,
+    });
+  },
+);
+
+const getRequestByIdForReview = catchAsync(
+  async (req: Request, res: Response) => {
+    const requestId = req.params.requestId as string;
+
+    const result = await requestService.getRequestByIdForReview(requestId);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Request retrieved successfully for review",
+      data: result,
+    });
+  },
+);
+
+const approveRequest = catchAsync(async (req: Request, res: Response) => {
+  const requestId = req.params.requestId as string;
+
+  const result = await requestService.approveRequest(requestId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Request approved successfully. Work order auto-generated.",
+    data: result,
+  });
+});
+
+const rejectRequest = catchAsync(async (req: Request, res: Response) => {
+  const requestId = req.params.requestId as string;
+
+  const result = await requestService.rejectRequest(requestId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Request rejected successfully",
+    data: result,
+  });
+});
+
 export const requestController = {
   createRequest,
   getAllRequests,
   getRequestById,
   updateRequest,
   deleteRequest,
+  getAllRequestsForReview,
+  getRequestByIdForReview,
+  approveRequest,
+  rejectRequest,
 };

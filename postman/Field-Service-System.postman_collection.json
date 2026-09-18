@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Field Service System API",
-		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests -> Work Orders -> Assignments -> Service Visits -> Service Reports -> Invoices. Resource IDs are captured automatically via test scripts.",
+		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician directly) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices. Completing a visit auto-completes the work order; payment & feedback are added later. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -43,10 +43,6 @@
 		},
 		{
 			"key": "visitId",
-			"value": ""
-		},
-		{
-			"key": "reportId",
 			"value": ""
 		},
 		{
@@ -95,7 +91,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"name\": \"Postman Test User\",\n  \"phone\": \"+60123456789\",\n  \"email\": \"postman@example.com\",\n  \"password\": \"password123\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/auth/register"
+						"url": "{{baseUrl}}/api/v1/v1/auth/register"
 					}
 				},
 				{
@@ -127,7 +123,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"identifier\": \"+60123456789\",\n  \"password\": \"password123\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/auth/login"
+						"url": "{{baseUrl}}/api/v1/v1/auth/login"
 					}
 				},
 				{
@@ -140,7 +136,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/auth/me"
+						"url": "{{baseUrl}}/api/v1/v1/auth/me"
 					}
 				},
 				{
@@ -172,7 +168,154 @@
 							"mode": "raw",
 							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/auth/refresh-token"
+						"url": "{{baseUrl}}/api/v1/v1/auth/refresh-token"
+					}
+				}
+			]
+		},
+		{
+			"name": "Technicians",
+			"description": "Apply as a technician (PENDING) then Admin/Manager approves (user becomes TECHNICIAN) or rejects. Includes technician profile CRUD.",
+			"item": [
+				{
+					"name": "Apply as Technician",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  pm.collectionVariables.set('technicianId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"employeeId\": \"TECH-1001\",\n  \"skills\": \"AC Repair, Refrigerator Repair\",\n  \"bio\": \"5 years of experience in appliance repair\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/technician/apply"
+					}
+				},
+				{
+					"name": "Get My Application",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/technician/my-application"
+					}
+				},
+				{
+					"name": "Get All Technicians (PENDING)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/technician?applicationStatus=PENDING&page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Technician By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/technician/{{technicianId}}"
+					}
+				},
+				{
+					"name": "Approve Technician",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/technician/approve/{{technicianId}}"
+					}
+				},
+				{
+					"name": "Reject Technician",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Insufficient experience\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/technician/reject/{{technicianId}}"
+					}
+				},
+				{
+					"name": "Update Technician Profile",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"skills\": \"AC Repair, Refrigerator Repair, Water Pump\",\n  \"bio\": \"6 years of experience in appliance repair\",\n  \"status\": \"AVAILABLE\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/technician/update/{{technicianId}}"
+					}
+				},
+				{
+					"name": "Delete Technician",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/technician/{{technicianId}}"
 					}
 				}
 			]
@@ -212,7 +355,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"name\": \"AC Repair Service\",\n  \"description\": \"Complete AC compressor check and repair\",\n  \"price\": \"1500\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/service/create"
+						"url": "{{baseUrl}}/api/v1/v1/service/create"
 					}
 				},
 				{
@@ -220,7 +363,7 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": "{{baseUrl}}/api/v1/service/get-all?page=1&limit=10"
+						"url": "{{baseUrl}}/api/v1/v1/service/get-all?page=1&limit=10"
 					}
 				},
 				{
@@ -241,7 +384,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"name\": \"AC Repair Service\",\n  \"description\": \"Updated description for AC repair service\",\n  \"price\": \"1800\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/service/update/{{serviceId}}"
+						"url": "{{baseUrl}}/api/v1/v1/service/update/{{serviceId}}"
 					}
 				},
 				{
@@ -258,7 +401,7 @@
 							"mode": "raw",
 							"raw": ""
 						},
-						"url": "{{baseUrl}}/api/v1/service/delete/{{serviceId}}"
+						"url": "{{baseUrl}}/api/v1/v1/service/delete/{{serviceId}}"
 					}
 				}
 			]
@@ -290,7 +433,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/customer/get"
+						"url": "{{baseUrl}}/api/v1/v1/customer/get"
 					}
 				},
 				{
@@ -311,14 +454,14 @@
 							"mode": "raw",
 							"raw": "{\n  \"address\": \"House 12, Road 5, Dhanmondi\",\n  \"city\": \"Dhaka\",\n  \"district\": \"Dhaka\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/customer/update"
+						"url": "{{baseUrl}}/api/v1/v1/customer/update"
 					}
 				}
 			]
 		},
 		{
 			"name": "Service Requests",
-			"description": "Customer only, authenticated with accessToken.",
+			"description": "Customer: create/update/delete own requests. Manager/Admin: review all requests and approve or reject; approving auto-generates a work order.",
 			"item": [
 				{
 					"name": "Create Service Request",
@@ -351,7 +494,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"title\": \"AC not cooling properly\",\n  \"description\": \"AC compressor was not working properly\",\n  \"preferredDate\": \"2026-09-20T10:00:00.000Z\",\n  \"address\": \"House 12, Road 5, Dhanmondi\",\n  \"city\": \"Dhaka\",\n  \"district\": \"Dhaka\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/request/service/{{serviceId}}"
+						"url": "{{baseUrl}}/api/v1/v1/request/service/{{serviceId}}"
 					}
 				},
 				{
@@ -364,7 +507,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/request?page=1&limit=10"
+						"url": "{{baseUrl}}/api/v1/v1/request?page=1&limit=10"
 					}
 				},
 				{
@@ -377,7 +520,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/request/{{requestId}}"
+						"url": "{{baseUrl}}/api/v1/v1/request/{{requestId}}"
 					}
 				},
 				{
@@ -398,7 +541,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"description\": \"AC compressor stopped working after servicing\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/request/{{requestId}}"
+						"url": "{{baseUrl}}/api/v1/v1/request/{{requestId}}"
 					}
 				},
 				{
@@ -411,17 +554,37 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/request/{{requestId}}"
+						"url": "{{baseUrl}}/api/v1/v1/request/{{requestId}}"
 					}
-				}
-			]
-		},
-		{
-			"name": "Work Orders",
-			"description": "Admin/Manager only, authenticated with accessToken.",
-			"item": [
+				},
 				{
-					"name": "Create Work Order",
+					"name": "Get All Requests (Manager Review)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/v1/request/admin?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Request By ID (Manager Review)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/v1/request/admin/{{requestId}}"
+					}
+				},
+				{
+					"name": "Approve Request (Manager -> auto work order)",
 					"event": [
 						{
 							"listen": "test",
@@ -429,138 +592,44 @@
 								"type": "text/javascript",
 								"exec": [
 									"if (pm.response.code === 200) {",
-									"  pm.collectionVariables.set('workOrderId', pm.response.json().data.id);",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.workOrder) {",
+									"    pm.collectionVariables.set('workOrderId', response.data.workOrder.id);",
+									"  }",
 									"}"
 								]
 							}
 						}
 					],
 					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"title\": \"AC Repair Work Order\",\n  \"description\": \"Repair AC compressor and wiring\",\n  \"estimatedCost\": \"1500\"\n}"
-						},
-						"url": "{{baseUrl}}/api/work-orders"
-					}
-				},
-				{
-					"name": "Get All Work Orders",
-					"request": {
-						"method": "GET",
+						"method": "PATCH",
 						"header": [
 							{
 								"key": "Authorization",
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/work-orders?page=1&limit=10"
+						"url": "{{baseUrl}}/api/v1/v1/request/admin/approve/{{requestId}}"
 					}
 				},
 				{
-					"name": "Get Work Order By ID",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							}
-						],
-						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
-					}
-				},
-				{
-					"name": "Assign Technician (CREATED -> ASSIGNED)",
+					"name": "Reject Request (Manager)",
 					"request": {
 						"method": "PATCH",
 						"header": [
 							{
 								"key": "Authorization",
 								"value": "Bearer {{accessToken}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"technicianId\": \"{{technicianId}}\"\n}"
-						},
-						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
-					}
-				},
-				{
-					"name": "Start Work Order (ASSIGNED -> IN_PROGRESS)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
-						},
-						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
-					}
-				},
-				{
-					"name": "Set Actual Cost",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"actualCost\": \"1800\"\n}"
-						},
-						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
-					}
-				},
-				{
-					"name": "Delete Work Order",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							}
-						],
-						"url": "{{baseUrl}}/api/work-orders/{{workOrderId}}"
+						"url": "{{baseUrl}}/api/v1/v1/request/admin/reject/{{requestId}}"
 					}
 				}
 			]
 		},
 		{
 			"name": "Assignments",
-			"description": "Create/Delete by Admin/Manager, respond by Technician, authenticated with accessToken.",
+			"description": "Create/Delete by Admin/Manager, view by Admin/Manager/Technician. Assignment is direct: creating an assignment immediately assigns the work order (no accept/reject step).",
 			"item": [
 				{
 					"name": "Create Assignment",
@@ -593,7 +662,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"technicianId\": \"{{technicianId}}\"\n}"
 						},
-						"url": "{{baseUrl}}/api/assignments"
+						"url": "{{baseUrl}}/api/v1/assignments"
 					}
 				},
 				{
@@ -606,7 +675,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/assignments?page=1&limit=10"
+						"url": "{{baseUrl}}/api/v1/assignments?page=1&limit=10"
 					}
 				},
 				{
@@ -619,28 +688,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/assignments/{{assignmentId}}"
-					}
-				},
-				{
-					"name": "Respond to Assignment (Technician)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"status\": \"ACCEPTED\"\n}"
-						},
-						"url": "{{baseUrl}}/api/assignments/{{assignmentId}}"
+						"url": "{{baseUrl}}/api/v1/assignments/{{assignmentId}}"
 					}
 				},
 				{
@@ -653,14 +701,14 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/assignments/{{assignmentId}}"
+						"url": "{{baseUrl}}/api/v1/assignments/{{assignmentId}}"
 					}
 				}
 			]
 		},
 		{
 			"name": "Service Visits",
-			"description": "Create/Delete by Admin/Manager, status updates by Technician, authenticated with accessToken.",
+			"description": "Create/Delete by Admin/Manager; status updates by Technician. SCHEDULED -> IN_PROGRESS (technician arrives / work started) -> COMPLETED (marks the work order COMPLETED).",
 			"item": [
 				{
 					"name": "Create Service Visit",
@@ -693,7 +741,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"technicianId\": \"{{technicianId}}\",\n  \"scheduledStart\": \"2026-09-20T10:00:00.000Z\",\n  \"scheduledEnd\": \"2026-09-20T12:00:00.000Z\",\n  \"notes\": \"Visit scheduled for AC repair\"\n}"
 						},
-						"url": "{{baseUrl}}/api/service-visits"
+						"url": "{{baseUrl}}/api/v1/service-visits"
 					}
 				},
 				{
@@ -706,7 +754,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/service-visits?page=1&limit=10"
+						"url": "{{baseUrl}}/api/v1/service-visits?page=1&limit=10"
 					}
 				},
 				{
@@ -719,7 +767,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/service-visits/{{visitId}}"
+						"url": "{{baseUrl}}/api/v1/service-visits/{{visitId}}"
 					}
 				},
 				{
@@ -740,11 +788,11 @@
 							"mode": "raw",
 							"raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
 						},
-						"url": "{{baseUrl}}/api/service-visits/{{visitId}}"
+						"url": "{{baseUrl}}/api/v1/service-visits/{{visitId}}"
 					}
 				},
 				{
-					"name": "Complete Visit (IN_PROGRESS -> COMPLETED)",
+					"name": "Complete Visit (IN_PROGRESS -> COMPLETED, work order auto-COMPLETED)",
 					"request": {
 						"method": "PATCH",
 						"header": [
@@ -761,7 +809,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"status\": \"COMPLETED\"\n}"
 						},
-						"url": "{{baseUrl}}/api/service-visits/{{visitId}}"
+						"url": "{{baseUrl}}/api/v1/service-visits/{{visitId}}"
 					}
 				},
 				{
@@ -774,107 +822,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/service-visits/{{visitId}}"
-					}
-				}
-			]
-		},
-		{
-			"name": "Service Reports",
-			"description": "Techician/Admin/Manager can create and view; creating a report marks the work order COMPLETED. Authenticated with accessToken.",
-			"item": [
-				{
-					"name": "Create Service Report",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 201) {",
-									"  pm.collectionVariables.set('reportId', pm.response.json().data.id);",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"technicianId\": \"{{technicianId}}\",\n  \"diagnosis\": \"AC compressor was not working properly\",\n  \"workPerformed\": \"Checked compressor and repaired the wiring\",\n  \"notes\": \"AC is working normally now\"\n}"
-						},
-						"url": "{{baseUrl}}/api/service-reports"
-					}
-				},
-				{
-					"name": "Get All Service Reports",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							}
-						],
-						"url": "{{baseUrl}}/api/service-reports?page=1&limit=10"
-					}
-				},
-				{
-					"name": "Get Service Report By ID",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							}
-						],
-						"url": "{{baseUrl}}/api/service-reports/{{reportId}}"
-					}
-				},
-				{
-					"name": "Update Service Report",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"notes\": \"Technician asked to follow up in one week\"\n}"
-						},
-						"url": "{{baseUrl}}/api/service-reports/{{reportId}}"
-					}
-				},
-				{
-					"name": "Delete Service Report",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{accessToken}}"
-							}
-						],
-						"url": "{{baseUrl}}/api/service-reports/{{reportId}}"
+						"url": "{{baseUrl}}/api/v1/service-visits/{{visitId}}"
 					}
 				}
 			]
@@ -914,7 +862,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"status\": \"DRAFT\",\n  \"dueDate\": \"2026-10-20T00:00:00.000Z\"\n}"
 						},
-						"url": "{{baseUrl}}/api/invoices"
+						"url": "{{baseUrl}}/api/v1/invoices"
 					}
 				},
 				{
@@ -927,7 +875,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/invoices?page=1&limit=10"
+						"url": "{{baseUrl}}/api/v1/invoices?page=1&limit=10"
 					}
 				},
 				{
@@ -940,7 +888,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/invoices/{{invoiceId}}"
+						"url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}"
 					}
 				},
 				{
@@ -961,7 +909,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"status\": \"ISSUED\"\n}"
 						},
-						"url": "{{baseUrl}}/api/invoices/{{invoiceId}}"
+						"url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}"
 					}
 				},
 				{
@@ -982,7 +930,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"status\": \"PAID\"\n}"
 						},
-						"url": "{{baseUrl}}/api/invoices/{{invoiceId}}"
+						"url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}"
 					}
 				},
 				{
@@ -995,7 +943,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/invoices/{{invoiceId}}"
+						"url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}"
 					}
 				}
 			]

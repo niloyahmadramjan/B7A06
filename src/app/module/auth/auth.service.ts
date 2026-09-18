@@ -12,7 +12,6 @@ import type {
   IRequestUser,
 } from "./auth.interface";
 
-const safeUser = { passwordHash: false };
 const normalizeEmail = (email?: string) =>
   email?.trim().toLowerCase() || undefined;
 const normalizePhone = (phone: string) => phone.trim();
@@ -44,53 +43,80 @@ const createTokens = (user: {
 };
 
 const registerUser = async (payload: IRegisterUserPayload) => {
-  if (!payload.name?.trim() || !payload.phone?.trim() || !payload.password)
+  if (!payload.name?.trim() || !payload.phone?.trim() || !payload.password) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
       "Name, phone, and password are required",
     );
-  if (payload.password.length < 8)
+  }
+
+  if (payload.password.length < 8) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
       "Password must be at least 8 characters long",
     );
+  }
+
   const email = normalizeEmail(payload.email);
   const phone = normalizePhone(payload.phone);
+
   const existing = await prisma.user.findFirst({
-    where: { OR: [{ phone }, ...(email ? [{ email }] : [])] },
+    where: {
+      OR: [{ phone }, ...(email ? [{ email }] : [])],
+    },
   });
-  if (existing)
+
+  if (existing) {
     throw new AppError(
       httpStatus.CONFLICT,
       "A user with this phone or email already exists",
     );
+  }
+
+  const passwordHash = await bcrypt.hash(
+    payload.password,
+    Number(config.bcrypt_salt_rounds) || 10,
+  );
 
   const user = await prisma.user.create({
     data: {
       name: payload.name.trim(),
       phone,
       email,
-      passwordHash: await bcrypt.hash(
-        payload.password,
-        Number(config.bcrypt_salt_rounds) || 10,
-      ),
+      passwordHash,
       role: UserRole.CUSTOMER,
+
+      customer: {
+        create: {
+			address: "",
+		},
+      },
     },
-    omit: safeUser,
+
+    omit: {
+      passwordHash: true,
+    },
+
+    include: {
+      customer: true,
+    },
   });
-  return { user, ...createTokens(user) };
+
+  return {
+    user,
+    ...createTokens(user),
+  };
 };
 
 const loginUser = async (payload: ILoginUserPayload) => {
-  if (!payload.identifier?.trim() || !payload.password)
+  if (!payload.email?.trim() || !payload.password)
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Identifier and password are required",
+      "Email and password are required",
     );
-  const identifier = payload.identifier.trim();
-  const email = normalizeEmail(identifier);
+  const email = payload.email.trim();
   const user = await prisma.user.findFirst({
-    where: { OR: [{ phone: identifier }, ...(email ? [{ email }] : [])] },
+    where: { email },
   });
   if (
     !user?.passwordHash ||
@@ -111,7 +137,7 @@ const loginUser = async (payload: ILoginUserPayload) => {
 const getMe = async (user: IRequestUser) => {
   const found = await prisma.user.findUnique({
     where: { id: user.userId },
-    omit: safeUser,
+    omit: { passwordHash: true },
   });
   if (!found) throw new AppError(httpStatus.NOT_FOUND, "User not found");
   return found;

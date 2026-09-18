@@ -123,17 +123,34 @@ const updateServiceVisit = async (
 		await assertNoScheduleConflict(visit.technicianId, scheduledStart, scheduledEnd, id);
 	}
 
+	const data = {
+		...payload,
+		...(payload.status === VisitStatus.IN_PROGRESS && !visit.actualStart
+			? { actualStart: new Date() }
+			: {}),
+		...(payload.status === VisitStatus.COMPLETED && !visit.actualEnd
+			? { actualEnd: new Date() }
+			: {}),
+	};
+
+	if (payload.status === VisitStatus.COMPLETED) {
+		return prisma.$transaction(async (tx) => {
+			const updated = await tx.serviceVisit.update({
+				where: { id },
+				data,
+				include,
+			});
+			await tx.workOrder.update({
+				where: { id: visit.workOrderId },
+				data: { status: WorkOrderStatus.COMPLETED, completedAt: new Date() },
+			});
+			return updated;
+		});
+	}
+
 	return prisma.serviceVisit.update({
 		where: { id },
-		data: {
-			...payload,
-			...(payload.status === VisitStatus.IN_PROGRESS && !visit.actualStart
-				? { actualStart: new Date() }
-				: {}),
-			...(payload.status === VisitStatus.COMPLETED && !visit.actualEnd
-				? { actualEnd: new Date() }
-				: {}),
-		},
+		data,
 		include,
 	});
 };

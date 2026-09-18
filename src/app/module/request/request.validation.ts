@@ -64,13 +64,6 @@ export const updateServiceRequestSchema = z.object({
     .string()
     .max(100, "District cannot exceed 100 characters")
     .optional(),
-
-  status: z.enum([
-    "PENDING",
-    "APPROVED",
-    "REJECTED",
-    "CANCELLED",
-  ]).optional(),
 }).refine((data) => Object.keys(data).length > 0, {
   message: "At least one field is required",
 });

@@ -12,7 +12,6 @@ import { AppError } from "../../utils/AppError";
 import type {
   IAssignmentQuery,
   ICreateAssignment,
-  IUpdateAssignment,
 } from "./assignment.interface";
 
 const include = {
@@ -29,7 +28,7 @@ const createAssignment = async (p: ICreateAssignment, user: RequestUser) => {
   if (wo.status !== WorkOrderStatus.CREATED)
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Only CREATED work orders can be assigned",
+      "Only unassigned work orders can be assigned",
     );
   const tech = await prisma.technician.findUnique({
     where: { id: p.technicianId },
@@ -40,21 +39,32 @@ const createAssignment = async (p: ICreateAssignment, user: RequestUser) => {
       httpStatus.BAD_REQUEST,
       "Offline technicians cannot be assigned",
     );
-  const duplicate = await prisma.technicianAssignment.findFirst({
+  const active = await prisma.technicianAssignment.findFirst({
     where: {
       workOrderId: p.workOrderId,
-      technicianId: p.technicianId,
-      status: AssignmentStatus.PENDING,
+      status: AssignmentStatus.ACCEPTED,
     },
   });
-  if (duplicate)
+  if (active)
     throw new AppError(
       httpStatus.CONFLICT,
-      "This technician is already assigned to the work order",
+      "This work order is already assigned to a technician",
     );
-  return prisma.technicianAssignment.create({
-    data: { ...p, assignedById: user.userId },
-    include,
+  return prisma.$transaction(async (tx) => {
+    const assignment = await tx.technicianAssignment.create({
+      data: {
+        ...p,
+        assignedById: user.userId,
+        status: AssignmentStatus.ACCEPTED,
+        respondedAt: new Date(),
+      },
+      include,
+    });
+    await tx.workOrder.update({
+      where: { id: p.workOrderId },
+      data: { status: WorkOrderStatus.ASSIGNED, technicianId: p.technicianId },
+    });
+    return assignment;
   });
 };
 
@@ -99,70 +109,33 @@ const getAssignmentById = async (id: string, user: RequestUser) => {
   return a;
 };
 
-const updateAssignment = async (
-  id: string,
-  p: IUpdateAssignment,
-  user: RequestUser,
-) => {
-  if (user.role !== UserRole.TECHNICIAN)
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "Only the assigned technician can respond to an assignment",
-    );
+const deleteAssignment = async (id: string) => {
   const a = await prisma.technicianAssignment.findUnique({
     where: { id },
-    include: { technician: true, workOrder: true },
+    include: { workOrder: true },
   });
   if (!a) throw new AppError(httpStatus.NOT_FOUND, "Assignment not found");
-  if (user.role === UserRole.TECHNICIAN && a.technician.userId !== user.userId)
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "You can only update your own assignments",
-    );
-  if (a.status !== AssignmentStatus.PENDING)
+  if (
+    a.workOrder.status === WorkOrderStatus.IN_PROGRESS ||
+    a.workOrder.status === WorkOrderStatus.COMPLETED ||
+    a.workOrder.status === WorkOrderStatus.CANCELLED
+  )
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Only pending assignments can be updated",
+      "The assignment cannot be removed once work has started",
     );
   return prisma.$transaction(async (tx) => {
-    const updated = await tx.technicianAssignment.update({
-      where: { id },
-      data: { status: p.status, respondedAt: new Date() },
-      include,
+    await tx.technicianAssignment.delete({ where: { id } });
+    await tx.workOrder.updateMany({
+      where: { id: a.workOrderId, technicianId: a.technicianId },
+      data: { status: WorkOrderStatus.CREATED, technicianId: null },
     });
-    if (p.status === AssignmentStatus.ACCEPTED) {
-      const changed = await tx.workOrder.updateMany({
-        where: { id: a.workOrderId, status: WorkOrderStatus.CREATED },
-        data: {
-          status: WorkOrderStatus.ASSIGNED,
-          technicianId: a.technicianId,
-        },
-      });
-      if (changed.count !== 1)
-        throw new AppError(
-          httpStatus.CONFLICT,
-          "This work order is no longer available for assignment",
-        );
-    }
-    return updated;
+    return { message: "Assignment deleted successfully" };
   });
-};
-
-const deleteAssignment = async (id: string) => {
-  const a = await prisma.technicianAssignment.findUnique({ where: { id } });
-  if (!a) throw new AppError(httpStatus.NOT_FOUND, "Assignment not found");
-  if (a.status !== AssignmentStatus.PENDING)
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Only pending assignments can be deleted",
-    );
-  await prisma.technicianAssignment.delete({ where: { id } });
-  return { message: "Assignment deleted successfully" };
 };
 export const assignmentService = {
   createAssignment,
   getAllAssignments,
   getAssignmentById,
-  updateAssignment,
   deleteAssignment,
 };

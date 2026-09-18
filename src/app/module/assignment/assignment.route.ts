@@ -5,10 +5,7 @@ import { UserRole } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
 import { assignmentController } from "./assignment.controller";
-import {
-  createAssignmentSchema,
-  updateAssignmentSchema,
-} from "./assignment.validation";
+import { createAssignmentSchema } from "./assignment.validation";
 const validate =
   (schema: any) => (req: Request, _res: Response, next: NextFunction) => {
     const r = schema.safeParse(req.body);
@@ -38,12 +35,6 @@ router.get(
   "/:assignmentId",
   auth(UserRole.MANAGER, UserRole.ADMIN, UserRole.TECHNICIAN),
   assignmentController.getAssignmentById,
-);
-router.patch(
-  "/:assignmentId",
-  auth(UserRole.TECHNICIAN),
-  validate(updateAssignmentSchema),
-  assignmentController.updateAssignment,
 );
 router.delete(
   "/:assignmentId",

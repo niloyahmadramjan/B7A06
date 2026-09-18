@@ -25,6 +25,38 @@ const validate = (schema: any) => (req: Request, _res: Response, next: NextFunct
 
 const router = Router();
 
+// ==== Manager Review ====
+
+// Get all requests for review
+router.get(
+  "/admin",
+  auth(UserRole.MANAGER, UserRole.ADMIN),
+  requestController.getAllRequestsForReview,
+);
+
+// Get a single request for review
+router.get(
+  "/admin/:requestId",
+  auth(UserRole.MANAGER, UserRole.ADMIN),
+  requestController.getRequestByIdForReview,
+);
+
+// Approve request (PENDING -> APPROVED, auto-generates work order)
+router.patch(
+  "/admin/approve/:requestId",
+  auth(UserRole.MANAGER, UserRole.ADMIN),
+  requestController.approveRequest,
+);
+
+// Reject request (PENDING -> REJECTED)
+router.patch(
+  "/admin/reject/:requestId",
+  auth(UserRole.MANAGER, UserRole.ADMIN),
+  requestController.rejectRequest,
+);
+
+// ==== Customer ====
+
 // Create service request
 router.post(
   "/service/:serviceId",

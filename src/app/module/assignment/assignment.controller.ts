@@ -3,6 +3,8 @@ import httpStatus from "http-status";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { assignmentService } from "./assignment.service";
+
+
 const createAssignment = catchAsync(async (req: Request, res: Response) => {
   const data = await assignmentService.createAssignment(req.body, req.user!);
   sendResponse(res, {
@@ -34,19 +36,6 @@ const getAssignmentById = catchAsync(async (req: Request, res: Response) => {
     data,
   });
 });
-const updateAssignment = catchAsync(async (req: Request, res: Response) => {
-  const data = await assignmentService.updateAssignment(
-    req.params.assignmentId as string,
-    req.body,
-    req.user!,
-  );
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Assignment updated successfully",
-    data,
-  });
-});
 const deleteAssignment = catchAsync(async (req: Request, res: Response) => {
   const r = await assignmentService.deleteAssignment(
     req.params.assignmentId as string,
@@ -62,6 +51,5 @@ export const assignmentController = {
   createAssignment,
   getAllAssignments,
   getAssignmentById,
-  updateAssignment,
   deleteAssignment,
 };

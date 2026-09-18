@@ -13,11 +13,10 @@ import { AuthRoutes } from "./app/module/auth/auth.route";
 import { ServiceRouter } from "./app/module/service/service.route";
 import { CustomerRouter } from "./app/module/customers/customer.route";
 import { requestRouter } from "./app/module/request/request.route";
-import { workOrderRouter } from "./app/module/work-order/work-order.route";
 import { assignmentRouter } from "./app/module/assignment/assignment.route";
 import { serviceVisitRouter } from "./app/module/service-visit/service-visit.route";
-import { serviceReportRouter } from "./app/module/service-report/service-report.route";
 import { invoiceRouter } from "./app/module/invoice/invoice.route";
+import { technicianRouter } from "./app/module/technician/technician.route";
 
 const app: Application = express();
 
@@ -39,11 +38,10 @@ app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/service", ServiceRouter);
 app.use("/api/v1/customer", CustomerRouter);
 app.use("/api/v1/request", requestRouter);
-app.use("/api/work-orders", workOrderRouter);
-app.use("/api/assignments", assignmentRouter);
-app.use("/api/service-visits", serviceVisitRouter);
-app.use("/api/service-reports", serviceReportRouter);
-app.use("/api/invoices", invoiceRouter);
+app.use("/api/v1/assignments", assignmentRouter);
+app.use("/api/v1/service-visits", serviceVisitRouter);
+app.use("/api/v1/invoices", invoiceRouter);
+app.use("/api/v1/technician", technicianRouter);
 
 
 // Basic route

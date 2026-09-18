@@ -3,9 +3,6 @@ export interface ICreateAssignment {
   workOrderId: string;
   technicianId: string;
 }
-export interface IUpdateAssignment {
-  status: AssignmentStatus;
-}
 export interface IAssignmentQuery {
   status?: AssignmentStatus;
   workOrderId?: string;

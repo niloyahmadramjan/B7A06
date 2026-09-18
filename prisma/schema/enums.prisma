@@ -20,6 +20,12 @@ enum TechnicianStatus {
   OFFLINE
 }
 
+enum TechnicianApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum ServiceRequestStatus {
   PENDING
   APPROVED
