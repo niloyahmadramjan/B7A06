@@ -22,6 +22,15 @@ export default {
 	admin_email: process.env.ADMIN_EMAIL!,
 	admin_pass: process.env.ADMIN_PASS!,
 
+	manager_email: process.env.MANAGER_EMAIL!,
+	manager_pass: process.env.MANAGER_PASS!,
+
+	technician_email: process.env.TECHNICIAN_EMAIL!,
+	technician_pass: process.env.TECHNICIAN_PASS!,
+
+	customer_email: process.env.CUSTOMER_EMAIL!,
+	customer_pass: process.env.CUSTOMER_PASS!,
+
 	patian_email: process.env.PATIANT_EMAIL!,
 	patian_pass: process.env.PATIANT_PASS!,
 
