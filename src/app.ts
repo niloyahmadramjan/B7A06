@@ -12,6 +12,7 @@ import { notFound } from "./app/middleware/notFound";
 import { assignmentRouter } from "./app/module/assignment/assignment.route";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { CustomerRouter } from "./app/module/customers/customer.route";
+import { feedbackRouter } from "./app/module/feedback/feedback.route";
 import { invoiceRouter } from "./app/module/invoice/invoice.route";
 import { paymentRouter } from "./app/module/payment/payment.router";
 import { requestRouter } from "./app/module/request/request.route";
@@ -44,6 +45,7 @@ app.use("/api/v1/service-visits", serviceVisitRouter);
 app.use("/api/v1/invoices", invoiceRouter);
 app.use("/api/v1/technician", technicianRouter);
 app.use("/api/v1/payments", paymentRouter);
+app.use("/api/v1/feedbacks", feedbackRouter);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {

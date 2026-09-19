@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Field Service System API",
-		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices (Manager issues) -> Payments (Customer pays invoice via bKash). Completing a visit auto-completes the work order. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects.",
+		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices (Manager issues) -> Payments (Customer pays invoice via bKash) -> Feedbacks (Customer reviews the completed + paid work order). Completing a visit auto-completes the work order. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -51,6 +51,10 @@
 		},
 		{
 			"key": "paymentId",
+			"value": ""
+		},
+		{
+			"key": "feedbackId",
 			"value": ""
 		}
 	],
@@ -1037,6 +1041,75 @@
 							}
 						],
 						"url": "{{baseUrl}}/api/v1/payments/{{paymentId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Feedbacks",
+			"description": "Service reviews. Only a Customer can submit feedback (POST /), and only after the work order is COMPLETED and its invoice is PAID. Rating is 1-5 and each work order can be reviewed once. The technician is attached automatically from the work order.",
+			"item": [
+				{
+					"name": "Create Feedback (Customer)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.id) {",
+									"    pm.collectionVariables.set('feedbackId', response.data.id);",
+									"  }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"rating\": 5,\n  \"comment\": \"Quick and professional service.\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/feedbacks"
+					}
+				},
+				{
+					"name": "Get All Feedbacks (role scoped)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/feedbacks?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Feedback By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/feedbacks/{{feedbackId}}"
 					}
 				}
 			]
