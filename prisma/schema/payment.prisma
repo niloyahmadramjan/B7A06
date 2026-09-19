@@ -10,6 +10,10 @@ model Payment {
 
   transactionId String? @unique
 
+  merchantInvoiceNumber String? @unique
+  gatewayPaymentId       String? @unique
+  gatewayResponse        Json?
+
   paidAt DateTime?
 
   createdAt DateTime @default(now())

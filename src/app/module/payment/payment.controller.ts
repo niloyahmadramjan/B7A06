@@ -41,8 +41,28 @@ const getSinglePayment = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const payInvoice = catchAsync(async (req: Request, res: Response) => {
+	const invoiceId = req.params.invoiceId as string;
+	const user = req.user!;
+
+	const result = await PaymentServices.payInvoice(invoiceId, user);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Payment Initiated Successfully",
+		data: result,
+	});
+});
+
+const paymentCallback = catchAsync(async (req: Request, res: Response) => {
+	const result = await PaymentServices.paymentCallback(req.query);
+	res.redirect(result.redirectUrl);
+});
+
 export const PaymentController = {
 	getMyPayments,
 	getAllPayments,
 	getSinglePayment,
+	payInvoice,
+	paymentCallback,
 };

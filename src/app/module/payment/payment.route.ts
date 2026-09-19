@@ -5,6 +5,18 @@ import { PaymentController } from "./payment.controller";
 
 const router = Router();
 
+// ==== bKash Payment ====
+
+// bKash redirects the payer's browser here after a payment attempt (public)
+router.get("/callback", PaymentController.paymentCallback);
+
+// Customer pays an issued invoice via bKash
+router.post(
+	"/:invoiceId/pay",
+	auth(UserRole.CUSTOMER),
+	PaymentController.payInvoice,
+);
+
 // ==== Admin / Manager ====
 
 // Get all payments (with optional filtering)
