@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ItemCategory } from "../../../generated/prisma/enums";
 
 const money = z
 	.union([z.string(), z.number()])
@@ -12,6 +13,21 @@ const status = z.enum(["DRAFT", "ISSUED", "PAID", "CANCELLED"]);
 const validDates = (data: { issuedAt?: Date | null; dueDate?: Date | null }) =>
 	!data.dueDate || !data.issuedAt || data.dueDate > data.issuedAt;
 
+export const invoiceItemSchema = z
+	.object({
+		title: z.string().trim().min(1, "Title is required"),
+		category: z
+			.enum([
+				ItemCategory.MATERIAL,
+				ItemCategory.LABOR,
+				ItemCategory.TRANSPORT,
+				ItemCategory.OTHER,
+			])
+			.optional(),
+		amount: money,
+	})
+	.strict();
+
 export const createInvoiceSchema = z
 	.object({
 		workOrderId: z.string().min(1, "Work order ID is required"),
@@ -20,12 +36,15 @@ export const createInvoiceSchema = z
 		status: status.optional(),
 		issuedAt: z.coerce.date().optional(),
 		dueDate: z.coerce.date().optional(),
+		items: z.array(invoiceItemSchema).max(100).optional(),
 	})
 	.strict()
 	.refine(validDates, {
 		message: "Due date must be after issued date",
 		path: ["dueDate"],
 	});
+
+export const createInvoiceItemSchema = invoiceItemSchema;
 
 export const updateInvoiceSchema = z
 	.object({

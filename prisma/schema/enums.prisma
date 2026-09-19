@@ -82,3 +82,10 @@ enum PaymentMethod {
   OTHER
 }
 
+enum ItemCategory {
+  MATERIAL
+  LABOR
+  TRANSPORT
+  OTHER
+}
+

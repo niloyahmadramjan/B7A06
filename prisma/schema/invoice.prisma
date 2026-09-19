@@ -20,8 +20,29 @@ model Invoice {
 
   customer Customer @relation(fields: [customerId],references: [id])
 
+  items    InvoiceItem[]
   payments Payment[]
 
   @@index([customerId])
   @@index([status])
+}
+
+model InvoiceItem {
+  id String @id @default(uuid())
+
+  invoiceId String
+
+  title    String
+  category ItemCategory @default(OTHER)
+  amount   Decimal @db.Decimal(10, 2)
+
+  addedById String?
+
+  addedBy   User?   @relation(fields: [addedById],references: [id],onDelete: SetNull)
+  invoice   Invoice @relation(fields: [invoiceId],references: [id],onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([addedById])
 }

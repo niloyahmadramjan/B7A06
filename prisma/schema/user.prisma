@@ -16,6 +16,7 @@ model User {
 
   assignedBy   TechnicianAssignment[]
   auditLogs    AuditLog[]
+  invoiceItems InvoiceItem[]
 
   @@index([role])
   @@index([status])

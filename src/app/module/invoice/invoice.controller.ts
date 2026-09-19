@@ -5,7 +5,7 @@ import { sendResponse } from "../../utils/sendResponse";
 import { invoiceService } from "./invoice.service";
 
 const createInvoice = catchAsync(async (req: Request, res: Response) => {
-	const data = await invoiceService.createInvoice(req.body);
+	const data = await invoiceService.createInvoice(req.body, req.user!);
 	sendResponse(res, {
 		statusCode: httpStatus.CREATED,
 		success: true,
@@ -13,6 +13,35 @@ const createInvoice = catchAsync(async (req: Request, res: Response) => {
 		data,
 	});
 });
+
+const addInvoiceItem = catchAsync(async (req: Request, res: Response) => {
+	const data = await invoiceService.addInvoiceItem(
+		req.params.invoiceId as string,
+		req.body,
+		req.user!,
+	);
+	sendResponse(res, {
+		statusCode: httpStatus.CREATED,
+		success: true,
+		message: "Additional cost added to invoice successfully",
+		data,
+	});
+});
+
+const deleteInvoiceItem = catchAsync(async (req: Request, res: Response) => {
+	const data = await invoiceService.deleteInvoiceItem(
+		req.params.invoiceId as string,
+		req.params.itemId as string,
+		req.user!,
+	);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Additional cost removed from invoice successfully",
+		data,
+	});
+});
+
 const getAllInvoices = catchAsync(async (req: Request, res: Response) => {
 	const result = await invoiceService.getAllInvoices(req.query, req.user!);
 	sendResponse(res, {
@@ -62,6 +91,8 @@ const deleteInvoice = catchAsync(async (req: Request, res: Response) => {
 
 export const invoiceController = {
 	createInvoice,
+	addInvoiceItem,
+	deleteInvoiceItem,
 	getAllInvoices,
 	getInvoiceById,
 	updateInvoice,

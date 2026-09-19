@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Field Service System API",
-		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices (Manager issues) -> Payments (initiate via /payments/initiate or /payments/:invoiceId/pay, then bKash redirect/webhook) -> Feedbacks (Customer reviews the completed + paid work order) -> Admin (users, roles, dashboard stats, audit logs). Users can read/update their own profile at /users/me. The core resource is exposed at /resources (CRUD + search + soft delete + assign/status/cancel/my-assigned). Completing a visit auto-completes the work order. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects.",
+		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices (Manager issues) -> Payments (initiate via /payments/initiate or /payments/:invoiceId/pay, then bKash redirect/webhook) -> Feedbacks (Customer reviews the completed + paid work order) -> Admin (users, roles, dashboard stats, audit logs). Users can read/update their own profile at /users/me. The core resource is exposed at /resources (CRUD + search + soft delete + assign/status/cancel/my-assigned). Completing a visit auto-completes the work order. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects. Attachments (Customer uploads photos against their own Service Request, Technician attaches before/after photos to their assigned Work Order) are handled under Attachments.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -63,6 +63,14 @@
 		},
 		{
 			"key": "resourceId",
+			"value": ""
+		},
+		{
+			"key": "attachmentId",
+			"value": ""
+		},
+		{
+			"key": "invoiceItemId",
 			"value": ""
 		}
 	],
@@ -694,6 +702,149 @@
 			]
 		},
 		{
+			"name": "Attachments",
+			"description": "File uploads (images/documents/other) linked to a Service Request or a Work Order. Files are stored on Cloudinary and only fileName, fileUrl and type are kept in the database (see Attachment model). A Customer attaches photos to their own request, a Technician attaches before/after photos to their assigned work order, and a Manager/Admin can attach/view/delete any. POST expects multipart/form-data with a file field plus optional requestId/workOrderId (at least one) and an optional type (IMAGE | DOCUMENT | OTHER; auto-detected from the MIME type when omitted).",
+			"item": [
+				{
+					"name": "Upload Request Attachment (Customer)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.id) {",
+									"    pm.collectionVariables.set('attachmentId', response.data.id);",
+									"  }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "requestId",
+									"value": "{{requestId}}",
+									"type": "text"
+								},
+								{
+									"key": "type",
+									"value": "IMAGE",
+									"type": "text"
+								}
+							]
+						},
+						"url": "{{baseUrl}}/api/v1/attachments"
+					}
+				},
+				{
+					"name": "Upload Work Order Attachment (Technician)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.id) {",
+									"    pm.collectionVariables.set('attachmentId', response.data.id);",
+									"  }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "workOrderId",
+									"value": "{{workOrderId}}",
+									"type": "text"
+								},
+								{
+									"key": "type",
+									"value": "IMAGE",
+									"type": "text"
+								}
+							]
+						},
+						"url": "{{baseUrl}}/api/v1/attachments"
+					}
+				},
+				{
+					"name": "Get All Attachments (role scoped)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/attachments?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Attachment By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/attachments/{{attachmentId}}"
+					}
+				},
+				{
+					"name": "Delete Attachment",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/attachments/{{attachmentId}}"
+					}
+				}
+			]
+		},
+		{
 			"name": "Resources",
 			"description": "Core resource = ServiceRequest. Full CRUD + search, soft delete, manager business operations (assign, status), customer cancel, and technician my-assigned. Existing /api/v1/request routes remain as aliases.",
 			"item": [
@@ -1077,7 +1228,7 @@
 		},
 		{
 			"name": "Invoices",
-			"description": "Create/Update/Delete by Admin/Manager, view by Admin/Manager/Customer. Amount is auto-calculated as Service Price + (actualCost ?? estimatedCost ?? 0) unless an explicit amount is sent. Authenticated with accessToken.",
+			"description": "Create/Update/Delete by Admin/Manager, view by Admin/Manager/Customer. Amount is auto-calculated as Service Price + (actualCost ?? estimatedCost ?? 0) + sum of additional cost items unless an explicit amount is sent. Admin/Manager/Technician can add extra bill line items (e.g. purchased parts, extra labor, transport) via POST /:invoiceId/items and remove them via DELETE /:invoiceId/items/:itemId — the invoice amount is updated automatically. Technicians can only add/remove costs on work orders assigned to them, and only while the invoice is DRAFT or ISSUED. Authenticated with accessToken.",
 			"item": [
 				{
 					"name": "Create Invoice",
@@ -1192,6 +1343,56 @@
 							}
 						],
 						"url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}"
+					}
+				},
+				{
+					"name": "Add Additional Cost To Invoice (Admin/Manager/Technician)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  const items = pm.response.json().data.items;",
+									"  if (Array.isArray(items) && items.length) {",
+									"    pm.collectionVariables.set('invoiceItemId', items[0].id);",
+									"  }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"AC Compressor - purchased extra part\",\n  \"category\": \"MATERIAL\",\n  \"amount\": 2500\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/items"
+					}
+				},
+				{
+					"name": "Remove Additional Cost From Invoice",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/items/{{invoiceItemId}}"
 					}
 				}
 			]

@@ -1,4 +1,13 @@
-import type { InvoiceStatus } from "../../../generated/prisma/enums";
+import type {
+	InvoiceStatus,
+	ItemCategory,
+} from "../../../generated/prisma/enums";
+
+export interface IInvoiceItem {
+	title: string;
+	category?: ItemCategory;
+	amount: string;
+}
 
 export interface ICreateInvoice {
 	workOrderId: string;
@@ -7,6 +16,7 @@ export interface ICreateInvoice {
 	status?: InvoiceStatus;
 	issuedAt?: Date;
 	dueDate?: Date;
+	items?: IInvoiceItem[];
 }
 
 export interface IUpdateInvoice {
@@ -14,6 +24,12 @@ export interface IUpdateInvoice {
 	status?: InvoiceStatus;
 	issuedAt?: Date | null;
 	dueDate?: Date | null;
+}
+
+export interface ICreateInvoiceItem {
+	title: string;
+	category?: ItemCategory;
+	amount: string;
 }
 
 export interface IInvoiceQuery {
