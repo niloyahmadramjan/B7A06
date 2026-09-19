@@ -9,3 +9,19 @@ export const redisClient = createClient({
 		port: Number(config.redis_port),
 	},
 });
+
+redisClient.on("error", (error) => {
+	// swallow connection errors; callers handle Redis unavailability gracefully
+	console.error("Redis error:", error.message);
+});
+
+export const ensureRedisConnected = async (): Promise<boolean> => {
+	try {
+		if (!redisClient.isOpen) {
+			await redisClient.connect();
+		}
+		return true;
+	} catch {
+		return false;
+	}
+};

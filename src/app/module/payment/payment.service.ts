@@ -153,8 +153,74 @@ const getInvoiceForPayment = async (invoiceId: string, user: RequestUser) => {
 	return invoice;
 };
 
+const queryBkashTransaction = async (
+	paymentID: string,
+	bkashIdToken: string,
+): Promise<Record<string, any>> => {
+	const response = await fetch(
+		`${config.bkash_base_url}/tokenized/checkout/payment/status`,
+		{
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				accept: "application/json",
+				Authorization: bkashIdToken,
+				"X-APP-Key": config.bkash_app_key,
+			},
+			body: JSON.stringify({ paymentID }),
+		},
+	);
+
+	return response.json();
+};
+
+const parseBkashDate = (value?: string) => {
+	if (!value) return new Date();
+
+	// bKash returns timestamps like "2026-09-19T09:28:55:970 GMT+0600",
+	// which Date cannot parse directly -> normalize to ISO 8601
+	const normalized = value
+		.replace(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}):(\d{3})/, "$1.$2")
+		.replace(/\s*GMT([+-])(\d{2})(\d{2})$/, "$1$2:$3");
+
+	const date = new Date(normalized);
+
+	return Number.isNaN(date.getTime()) ? new Date() : date;
+};
+
+const settlePayment = async (
+	paymentId: string,
+	invoiceId: string,
+	gatewayResponse: Record<string, any>,
+) => {
+	await prisma.$transaction([
+		prisma.payment.update({
+			where: { id: paymentId },
+			data: {
+				status: PaymentStatus.SUCCESS,
+				transactionId: gatewayResponse.trxID,
+				paidAt: parseBkashDate(gatewayResponse.paymentExecuteTime),
+				gatewayResponse,
+			},
+		}),
+		prisma.invoice.update({
+			where: { id: invoiceId },
+			data: { status: InvoiceStatus.PAID },
+		}),
+	]);
+};
+
 const payInvoice = async (invoiceId: string, user: RequestUser) => {
 	const invoice = await getInvoiceForPayment(invoiceId, user);
+
+	// never start a second bKash session for an invoice that is already settled
+	const existingSuccess = await prisma.payment.findFirst({
+		where: { invoiceId: invoice.id, status: PaymentStatus.SUCCESS },
+	});
+
+	if (existingSuccess) {
+		throw new AppError(httpStatus.BAD_REQUEST, "Invoice Is Already Paid");
+	}
 
 	// expire stale pending sessions so a fresh bKash payment is always created
 	await prisma.payment.updateMany({
@@ -242,6 +308,14 @@ const paymentCallback = async (query: Record<string, any>) => {
 		throw new AppError(httpStatus.NOT_FOUND, "Payment Not Found");
 	}
 
+	// idempotency: a settled payment must never hit bKash (execute) again,
+	// otherwise bKash answers with "Duplicate for All Transactions"
+	if (payment.status === PaymentStatus.SUCCESS) {
+		return {
+			redirectUrl: `${config.frontend_url}/dashboard/invoices?payment=success`,
+		};
+	}
+
 	if (status === "success") {
 		const bkashIdToken = await getBkashIdToken();
 
@@ -265,33 +339,50 @@ const paymentCallback = async (query: Record<string, any>) => {
 
 		const executedPaymentResult = await executeResponse.json();
 
-		if (!executeResponse.ok || executedPaymentResult?.statusCode !== "0000") {
-			throw new AppError(
-				httpStatus.BAD_GATEWAY,
-				executedPaymentResult?.statusMessage ||
-					"Failed To Execute bKash Payment",
-			);
+		if (executeResponse.ok && executedPaymentResult?.statusCode === "0000") {
+			await settlePayment(payment.id, payment.invoiceId, executedPaymentResult);
+
+			return {
+				redirectUrl: `${config.frontend_url}/dashboard/invoices?payment=success`,
+			};
 		}
 
-		await prisma.$transaction([
-			prisma.payment.update({
-				where: { id: payment.id },
-				data: {
-					status: PaymentStatus.SUCCESS,
-					transactionId: executedPaymentResult.trxID,
-					paidAt: new Date(executedPaymentResult.paymentExecuteTime),
-					gatewayResponse: executedPaymentResult,
-				},
-			}),
-			prisma.invoice.update({
-				where: { id: payment.invoiceId },
-				data: { status: InvoiceStatus.PAID },
-			}),
-		]);
+		// a concurrent/repeated callback can make execute report a duplicate;
+		// verify with bKash before treating it as a failure
+		const isDuplicate = /duplicate/i.test(
+			executedPaymentResult?.statusMessage ?? "",
+		);
 
-		return {
-			redirectUrl: `${config.frontend_url}/dashboard/invoices?payment=success`,
-		};
+		if (isDuplicate) {
+			const transaction = await queryBkashTransaction(
+				gatewayPaymentId,
+				bkashIdToken,
+			);
+
+			if (
+				transaction?.statusCode === "0000" &&
+				String(transaction?.transactionStatus).toLowerCase() === "completed"
+			) {
+				await settlePayment(payment.id, payment.invoiceId, transaction);
+
+				return {
+					redirectUrl: `${config.frontend_url}/dashboard/invoices?payment=success`,
+				};
+			}
+		}
+
+		await prisma.payment.update({
+			where: { id: payment.id },
+			data: {
+				status: PaymentStatus.FAILED,
+				gatewayResponse: executedPaymentResult,
+			},
+		});
+
+		throw new AppError(
+			httpStatus.BAD_GATEWAY,
+			executedPaymentResult?.statusMessage || "Failed To Execute bKash Payment",
+		);
 	}
 
 	if (status === "failure" || status === "cancel") {

@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Field Service System API",
-		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician directly) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices. Completing a visit auto-completes the work order; payment & feedback are added later. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects.",
+		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices (Manager issues) -> Payments (Customer pays invoice via bKash). Completing a visit auto-completes the work order. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -48,6 +48,10 @@
 		{
 			"key": "invoiceId",
 			"value": ""
+		},
+		{
+			"key": "paymentId",
+			"value": ""
 		}
 	],
 	"item": [
@@ -91,7 +95,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"name\": \"Postman Test User\",\n  \"phone\": \"+60123456789\",\n  \"email\": \"postman@example.com\",\n  \"password\": \"password123\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/v1/auth/register"
+						"url": "{{baseUrl}}/api/v1/auth/register"
 					}
 				},
 				{
@@ -123,7 +127,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"identifier\": \"+60123456789\",\n  \"password\": \"password123\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/v1/auth/login"
+						"url": "{{baseUrl}}/api/v1/auth/login"
 					}
 				},
 				{
@@ -136,7 +140,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/v1/auth/me"
+						"url": "{{baseUrl}}/api/v1/auth/me"
 					}
 				},
 				{
@@ -168,7 +172,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/v1/auth/refresh-token"
+						"url": "{{baseUrl}}/api/v1/auth/refresh-token"
 					}
 				}
 			]
@@ -355,7 +359,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"name\": \"AC Repair Service\",\n  \"description\": \"Complete AC compressor check and repair\",\n  \"price\": \"1500\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/v1/service/create"
+						"url": "{{baseUrl}}/api/v1/service/create"
 					}
 				},
 				{
@@ -363,7 +367,7 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": "{{baseUrl}}/api/v1/v1/service/get-all?page=1&limit=10"
+						"url": "{{baseUrl}}/api/v1/service/get-all?page=1&limit=10"
 					}
 				},
 				{
@@ -384,7 +388,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"name\": \"AC Repair Service\",\n  \"description\": \"Updated description for AC repair service\",\n  \"price\": \"1800\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/v1/service/update/{{serviceId}}"
+						"url": "{{baseUrl}}/api/v1/service/update/{{serviceId}}"
 					}
 				},
 				{
@@ -397,11 +401,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": "{{baseUrl}}/api/v1/v1/service/delete/{{serviceId}}"
+						"url": "{{baseUrl}}/api/v1/service/delete/{{serviceId}}"
 					}
 				}
 			]
@@ -433,7 +433,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/v1/customer/get"
+						"url": "{{baseUrl}}/api/v1/customer/get"
 					}
 				},
 				{
@@ -454,7 +454,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"address\": \"House 12, Road 5, Dhanmondi\",\n  \"city\": \"Dhaka\",\n  \"district\": \"Dhaka\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/v1/customer/update"
+						"url": "{{baseUrl}}/api/v1/customer/update"
 					}
 				}
 			]
@@ -494,7 +494,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"title\": \"AC not cooling properly\",\n  \"description\": \"AC compressor was not working properly\",\n  \"preferredDate\": \"2026-09-20T10:00:00.000Z\",\n  \"address\": \"House 12, Road 5, Dhanmondi\",\n  \"city\": \"Dhaka\",\n  \"district\": \"Dhaka\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/v1/request/service/{{serviceId}}"
+						"url": "{{baseUrl}}/api/v1/request/service/{{serviceId}}"
 					}
 				},
 				{
@@ -507,7 +507,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/v1/request?page=1&limit=10"
+						"url": "{{baseUrl}}/api/v1/request?page=1&limit=10"
 					}
 				},
 				{
@@ -520,7 +520,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/v1/request/{{requestId}}"
+						"url": "{{baseUrl}}/api/v1/request/{{requestId}}"
 					}
 				},
 				{
@@ -541,7 +541,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"description\": \"AC compressor stopped working after servicing\"\n}"
 						},
-						"url": "{{baseUrl}}/api/v1/v1/request/{{requestId}}"
+						"url": "{{baseUrl}}/api/v1/request/{{requestId}}"
 					}
 				},
 				{
@@ -554,7 +554,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/v1/request/{{requestId}}"
+						"url": "{{baseUrl}}/api/v1/request/{{requestId}}"
 					}
 				},
 				{
@@ -567,7 +567,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/v1/request/admin?page=1&limit=10"
+						"url": "{{baseUrl}}/api/v1/request/admin?page=1&limit=10"
 					}
 				},
 				{
@@ -580,7 +580,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/v1/request/admin/{{requestId}}"
+						"url": "{{baseUrl}}/api/v1/request/admin/{{requestId}}"
 					}
 				},
 				{
@@ -609,7 +609,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/v1/request/admin/approve/{{requestId}}"
+						"url": "{{baseUrl}}/api/v1/request/admin/approve/{{requestId}}"
 					}
 				},
 				{
@@ -622,7 +622,7 @@
 								"value": "Bearer {{accessToken}}"
 							}
 						],
-						"url": "{{baseUrl}}/api/v1/v1/request/admin/reject/{{requestId}}"
+						"url": "{{baseUrl}}/api/v1/request/admin/reject/{{requestId}}"
 					}
 				}
 			]
@@ -913,7 +913,7 @@
 					}
 				},
 				{
-					"name": "Mark Invoice As Paid",
+					"name": "Mark Invoice As Paid (manager override)",
 					"request": {
 						"method": "PATCH",
 						"header": [
@@ -944,6 +944,99 @@
 							}
 						],
 						"url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"description": "bKash payment flow. Customer pays an issued invoice (POST /:invoiceId/pay returns a bKash payment URL to open in the browser). The bKash redirect callback is public. Admin/Manager lists all payments; Customer lists their own via /my. Customer can only view their own single payment.",
+			"item": [
+				{
+					"name": "Pay Invoice (initiate bKash)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.paymentId) {",
+									"    pm.collectionVariables.set('paymentId', response.data.paymentId);",
+									"  }",
+									"  if (response.data && response.data.paymentUrl) {",
+									"    console.log('Open this URL in a browser:', response.data.paymentUrl);",
+									"  }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{baseUrl}}/api/v1/payments/{{invoiceId}}/pay"
+					}
+				},
+				{
+					"name": "bKash Callback (public redirect target)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/v1/payments/callback?paymentID=REPLACE_WITH_bKash_paymentID&status=success"
+					}
+				},
+				{
+					"name": "Get All Payments (Admin/Manager)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/payments/all?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get My Payments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/payments/my?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Payment By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/payments/{{paymentId}}"
 					}
 				}
 			]

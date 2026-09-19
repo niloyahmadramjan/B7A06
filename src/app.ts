@@ -13,7 +13,7 @@ import { assignmentRouter } from "./app/module/assignment/assignment.route";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { CustomerRouter } from "./app/module/customers/customer.route";
 import { invoiceRouter } from "./app/module/invoice/invoice.route";
-import { paymentRouter } from "./app/module/payment/payment.route";
+import { paymentRouter } from "./app/module/payment/payment.router";
 import { requestRouter } from "./app/module/request/request.route";
 import { ServiceRouter } from "./app/module/service/service.route";
 import { serviceVisitRouter } from "./app/module/service-visit/service-visit.route";
