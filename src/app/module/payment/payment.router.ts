@@ -10,6 +10,16 @@ const router = Router();
 // bKash redirects the payer's browser here after a payment attempt (public)
 router.get("/callback", PaymentController.paymentCallback);
 
+// bKash/commerce webhook (public, server-to-server)
+router.post("/webhook", PaymentController.paymentWebhook);
+
+// Initiate a payment for an invoice (invoiceId in body or query)
+router.post(
+	"/initiate",
+	auth(UserRole.CUSTOMER),
+	PaymentController.initiatePayment,
+);
+
 // Customer pays an issued invoice via bKash
 router.post(
 	"/:invoiceId/pay",

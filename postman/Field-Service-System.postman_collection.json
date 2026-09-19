@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Field Service System API",
-		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices (Manager issues) -> Payments (Customer pays invoice via bKash) -> Feedbacks (Customer reviews the completed + paid work order). Completing a visit auto-completes the work order. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects.",
+		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices (Manager issues) -> Payments (initiate via /payments/initiate or /payments/:invoiceId/pay, then bKash redirect/webhook) -> Feedbacks (Customer reviews the completed + paid work order) -> Admin (users, roles, dashboard stats, audit logs). Users can read/update their own profile at /users/me. The core resource is exposed at /resources (CRUD + search + soft delete + assign/status/cancel/my-assigned). Completing a visit auto-completes the work order. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -55,6 +55,14 @@
 		},
 		{
 			"key": "feedbackId",
+			"value": ""
+		},
+		{
+			"key": "userId",
+			"value": ""
+		},
+		{
+			"key": "resourceId",
 			"value": ""
 		}
 	],
@@ -177,6 +185,60 @@
 							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
 						},
 						"url": "{{baseUrl}}/api/v1/auth/refresh-token"
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"description": "Authenticated user profile. GET /me returns the current user with customer/technician profile. PATCH /me updates shared fields plus role-specific profile fields.",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/users/me"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const r = pm.response.json();",
+									"  if (r.data && r.data.id) pm.collectionVariables.set('userId', r.data.id);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update My Profile",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/users/me",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"01700000000\"\n}"
+						}
 					}
 				}
 			]
@@ -632,6 +694,188 @@
 			]
 		},
 		{
+			"name": "Resources",
+			"description": "Core resource = ServiceRequest. Full CRUD + search, soft delete, manager business operations (assign, status), customer cancel, and technician my-assigned. Existing /api/v1/request routes remain as aliases.",
+			"item": [
+				{
+					"name": "Create Resource (Customer)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"title\": \"AC not cooling\",\n  \"address\": \"12 Gulshan Ave, Dhaka\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  const r = pm.response.json();",
+									"  if (r.data && r.data.id) pm.collectionVariables.set('resourceId', r.data.id);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get All Resources",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Search Resources",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources/search?q=AC"
+					}
+				},
+				{
+					"name": "Get My Assigned Resources",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources/my-assigned?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Resource By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources/{{resourceId}}"
+					}
+				},
+				{
+					"name": "Update Resource",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources/{{resourceId}}",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"AC not cooling at all\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Delete Resource (soft)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources/{{resourceId}}"
+					}
+				},
+				{
+					"name": "Assign Resource (Manager)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources/{{resourceId}}/assign",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"technicianId\": \"{{technicianId}}\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Update Resource Status (Manager)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources/{{resourceId}}/status",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"APPROVED\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Cancel Resource",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/resources/{{resourceId}}/cancel"
+					}
+				}
+			]
+		},
+		{
 			"name": "Assignments",
 			"description": "Create/Delete by Admin/Manager, view by Admin/Manager/Technician. Assignment is direct: creating an assignment immediately assigns the work order (no accept/reject step).",
 			"item": [
@@ -957,6 +1201,58 @@
 			"description": "bKash payment flow. Customer pays an issued invoice (POST /:invoiceId/pay returns a bKash payment URL to open in the browser). The bKash redirect callback is public. Admin/Manager lists all payments; Customer lists their own via /my. Customer can only view their own single payment.",
 			"item": [
 				{
+					"name": "Initiate Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/payments/initiate",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceId\": \"{{invoiceId}}\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const r = pm.response.json();",
+									"  if (r.data && r.data.paymentId) pm.collectionVariables.set('paymentId', r.data.paymentId);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Payment Webhook (public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/payments/webhook",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"paymentID\": \"REPLACE_WITH_bKash_paymentID\",\n  \"status\": \"success\"\n}"
+						}
+					}
+				},
+				{
 					"name": "Pay Invoice (initiate bKash)",
 					"event": [
 						{
@@ -1110,6 +1406,72 @@
 							}
 						],
 						"url": "{{baseUrl}}/api/v1/feedbacks/{{feedbackId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"description": "Admin operations: list users, change a user role, dashboard stats (counts + revenue + avg rating), and audit logs (system change tracking).",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/admin/users?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Update User Role",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/admin/users/{{userId}}/role",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"role\": \"MANAGER\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/admin/dashboard-stats"
+					}
+				},
+				{
+					"name": "Get Audit Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/admin/audit-logs?page=1&limit=10"
 					}
 				}
 			]

@@ -19,6 +19,7 @@ model ServiceRequest {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   customer Customer @relation(fields: [customerId],references: [id],onDelete: Cascade)
 

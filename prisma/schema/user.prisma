@@ -15,6 +15,7 @@ model User {
   technician   Technician?
 
   assignedBy   TechnicianAssignment[]
+  auditLogs    AuditLog[]
 
   @@index([role])
   @@index([status])

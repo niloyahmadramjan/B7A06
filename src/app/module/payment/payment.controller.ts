@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import httpStatus from "http-status";
+import { AppError } from "../../utils/AppError";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { PaymentServices } from "./payment.service";
@@ -59,10 +60,44 @@ const paymentCallback = catchAsync(async (req: Request, res: Response) => {
 	res.redirect(result.redirectUrl);
 });
 
+const initiatePayment = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user!;
+	const invoiceId = (req.body?.invoiceId ?? req.query.invoiceId) as
+		| string
+		| undefined;
+
+	if (!invoiceId) {
+		throw new AppError(httpStatus.BAD_REQUEST, "Invoice ID Is Required");
+	}
+
+	const result = await PaymentServices.payInvoice(invoiceId, user);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Payment Initiated Successfully",
+		data: result,
+	});
+});
+
+const paymentWebhook = catchAsync(async (req: Request, res: Response) => {
+	const result = await PaymentServices.paymentCallback({
+		...req.query,
+		...req.body,
+	});
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Payment Webhook Processed Successfully",
+		data: result,
+	});
+});
+
 export const PaymentController = {
 	getMyPayments,
 	getAllPayments,
 	getSinglePayment,
 	payInvoice,
+	initiatePayment,
 	paymentCallback,
+	paymentWebhook,
 };

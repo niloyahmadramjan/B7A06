@@ -12,6 +12,7 @@ import { getBkashIdToken } from "../../lib/bkash";
 import { prisma } from "../../lib/prisma";
 import type { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
+import { recordAuditLog } from "../../utils/auditLog";
 import type { IPaymentQuery } from "./payment.interface";
 
 const include = {
@@ -208,6 +209,16 @@ const settlePayment = async (
 			data: { status: InvoiceStatus.PAID },
 		}),
 	]);
+
+	await recordAuditLog({
+		action: "PAYMENT_SUCCESS",
+		entity: "Payment",
+		entityId: paymentId,
+		changes: {
+			trxID: gatewayResponse.trxID,
+			amount: gatewayResponse.amount,
+		},
+	});
 };
 
 const payInvoice = async (invoiceId: string, user: RequestUser) => {
