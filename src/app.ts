@@ -14,6 +14,7 @@ import { assignmentRouter } from "./app/module/assignment/assignment.route";
 import { attachmentRouter } from "./app/module/attachment/attachment.route";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { CustomerRouter } from "./app/module/customers/customer.route";
+import { dashboardRouter } from "./app/module/dashboard/dashboard.route";
 import { feedbackRouter } from "./app/module/feedback/feedback.route";
 import { invoiceRouter } from "./app/module/invoice/invoice.route";
 import { paymentRouter } from "./app/module/payment/payment.router";
@@ -53,6 +54,7 @@ app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/feedbacks", feedbackRouter);
 app.use("/api/v1/users", UsersRouter);
 app.use("/api/v1/resources", resourceRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/admin", adminRouter);
 
 // Basic route

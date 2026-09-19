@@ -1676,6 +1676,64 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Dashboard",
+			"description": "Read-only analytics made from existing data (no new CRUD). Admin/Manager: customers, technicians, services, requests, work orders, completed orders, pending requests and total revenue. Technician: assigned work orders, pending assignments, today's visits and completed work orders. Customer: own service requests, pending requests, active work orders, completed services, total and paid invoices.",
+			"item": [
+				{
+					"name": "Get Admin Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/dashboard/admin"
+					}
+				},
+				{
+					"name": "Get Manager Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/dashboard/manager"
+					}
+				},
+				{
+					"name": "Get Technician Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/dashboard/technician"
+					}
+				},
+				{
+					"name": "Get Customer Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/dashboard/customer"
+					}
+				}
+			]
 		}
 	]
 }
