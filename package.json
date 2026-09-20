@@ -8,7 +8,7 @@
     "postinstall": "prisma generate && tsup",
     "build": "prisma generate && tsup",
     "start": "node dist/server.js",
-    "seed": "tsx prisma/seed.ts",
+    "seed": "tsx src/app/utils/seed.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format:check": "npx @biomejs/biome format ./src",
     "format:fix": "npx @biomejs/biome format --write ./src",

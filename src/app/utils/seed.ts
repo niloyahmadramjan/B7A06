@@ -1,12 +1,14 @@
 import bcrypt from "bcryptjs";
-import config from "../src/app/config";
-import { prisma } from "../src/app/lib/prisma";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import {
 	TechnicianApplicationStatus,
 	TechnicianStatus,
 	UserRole,
 	UserStatus,
-} from "../src/generated/prisma/enums";
+} from "../../generated/prisma/enums";
+import config from "../config";
+import { prisma } from "../lib/prisma";
 
 const hashPassword = (password: string) =>
 	bcrypt.hash(password, Number(config.bcrypt_salt_rounds) || 10);
@@ -22,6 +24,11 @@ const assertCredentials = (
 	return { email, password };
 };
 
+const findExistingUser = (phone: string, email?: string) =>
+	prisma.user.findFirst({
+		where: { OR: [{ phone }, ...(email ? [{ email }] : [])] },
+	});
+
 const seedAdmin = async () => {
 	const { email, password } = assertCredentials(
 		"Admin",
@@ -29,7 +36,7 @@ const seedAdmin = async () => {
 		config.admin_pass,
 	);
 
-	const existing = await prisma.user.findUnique({ where: { email } });
+	const existing = await findExistingUser("01700000001", email);
 	if (existing) {
 		console.log("Admin already exists:", email);
 		return;
@@ -57,7 +64,7 @@ const seedManager = async () => {
 		config.manager_pass,
 	);
 
-	const existing = await prisma.user.findUnique({ where: { email } });
+	const existing = await findExistingUser("01700000002", email);
 	if (existing) {
 		console.log("Manager already exists:", email);
 		return;
@@ -85,7 +92,7 @@ const seedTechnician = async () => {
 		config.technician_pass,
 	);
 
-	const existing = await prisma.user.findUnique({ where: { email } });
+	const existing = await findExistingUser("01700000003", email);
 	if (existing) {
 		console.log("Technician already exists:", email);
 		return;
@@ -123,7 +130,7 @@ const seedCustomer = async () => {
 		config.customer_pass,
 	);
 
-	const existing = await prisma.user.findUnique({ where: { email } });
+	const existing = await findExistingUser("01700000004", email);
 	if (existing) {
 		console.log("Customer already exists:", email);
 		return;
@@ -152,18 +159,30 @@ const seedCustomer = async () => {
 	console.log("Customer created:", user.email);
 };
 
-const main = async () => {
+export const seedDefaultUsers = async () => {
 	await seedAdmin();
 	await seedManager();
 	await seedTechnician();
 	await seedCustomer();
 };
 
-main()
-	.catch((error) => {
-		console.error("Seeding failed:", error);
-		process.exitCode = 1;
-	})
-	.finally(async () => {
-		await prisma.$disconnect();
-	});
+const main = async () => {
+	await seedDefaultUsers();
+	console.log("Default users ensured.");
+};
+
+const isEntrypoint =
+	process.argv[1] != null &&
+	/seed(\.js|\.cjs|\.mjs|\.ts)?$/i.test(process.argv[1]) &&
+	import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+
+if (isEntrypoint) {
+	main()
+		.catch((error) => {
+			console.error("Seeding failed:", error);
+			process.exitCode = 1;
+		})
+		.finally(async () => {
+			await prisma.$disconnect();
+		});
+}
