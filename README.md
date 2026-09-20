@@ -178,7 +178,7 @@ Connected to the database successfully.
 Server is running on port 5000
 ```
 
-Health check: `GET http://localhost:5000/api/v1`
+Health check: `GET http://localhost:5000`
 
 ## Demo Accounts
 
@@ -191,6 +191,8 @@ change them in `.env` and re-seed to use your own.
 | Manager     | manager@gmail.com   | manager12345     |
 | Technician  | technician@gmail.com| technician12345  |
 | Customer    | customer@gmail.com  | customer12345    |
+
+DrowSqlLink=https://drawsql.app/teams/ramjan/diagrams/service-field-backend
 
 ## Environment Variables
 
