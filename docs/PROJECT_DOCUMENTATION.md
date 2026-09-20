@@ -118,17 +118,29 @@ Route guards are explicit per endpoint, e.g.
 | Manage services (create/update/delete)       |   ✓   |    ✓    |      |          |
 | Create service request                       |       |         |      |    ✓     |
 | Approve / reject request                     |   ✓   |    ✓    |      |          |
-| Assign technician / manage assignments       |   ✓   |    ✓    |      |          |
+| View work orders                            |   ✓   |    ✓    |  ✓*  |    ✓†    |
+| Update work-order status (CREATED → CANCELLED) |   ✓ |    ✓    |      |          |
+| Create assignment offer (PENDING)            |   ✓   |    ✓    |      |          |
+| Accept / reject assignment offer             |       |         |  ✓*  |          |
+| Manage assignments (view/delete)             |   ✓   |    ✓    |  ✓*  |          |
 | Schedule & manage service visits             |   ✓   |    ✓    |  ✓*  |          |
+| View service visits                          |   ✓   |    ✓    |  ✓*  |    ✓†    |
+| File service reports (create/update)         |       |         |  ✓*  |          |
+| View service reports                        |   ✓   |    ✓    |  ✓*  |          |
 | Create / manage invoices                     |   ✓   |    ✓    |      |          |
+| Add invoice cost items                       |   ✓   |    ✓    |  ✓*  |          |
 | View invoices                                |   ✓   |    ✓    |      |    ✓     |
 | Initiate payment (bKash)                     |       |         |      |    ✓     |
 | Submit feedback                              |       |         |      |    ✓     |
 | Manage technicians (apply / approve / reject)|   ✓   |    ✓    |  ✓†  |    ✓‡    |
 | Admin users / roles / stats / audit logs     |   ✓   |    ✓§   |      |          |
 
-\* Technicians may update visit **status only** (start/complete) and only on their own visits.
-† Technicians can view/update their own profile.
+\* Technicians may act on their **own/assigned** records only — they update visit
+or work-order **status only** (start/complete) on their own assigned work, view
+only work orders/visits/reports assigned to them, and add cost items only while
+the invoice is `DRAFT`/`ISSUED`.
+† Customers only ever see their **own** records (work orders via their service
+request, visits via the work order, invoices, payments).
 ‡ Customers can *apply* to become a technician.
 § Users + dashboard stats require MANAGER or ADMIN; role changes and audit logs require ADMIN.
 
@@ -390,12 +402,14 @@ request management, technician assignment, status changes, and soft-delete.
 
 ### 7.8 Assignments — `/assignments`
 
-| Method | Path             | Roles | Description |
-| ------ | ---------------- | ----- | ----------- |
-| POST   | `/`              | MANAGER, ADMIN | Assign technician to a `CREATED` work order. |
-| GET    | `/`              | MANAGER, ADMIN, TECHNICIAN | List assignments (`status`, `workOrderId`, `technicianId`). |
-| GET    | `/:assignmentId` | MANAGER, ADMIN, TECHNICIAN | Single assignment. |
-| DELETE | `/:assignmentId` | MANAGER, ADMIN | Remove assignment (only before work starts). |
+| Method | Path                     | Roles | Description |
+| ------ | ------------------------ | ----- | ----------- |
+| POST   | `/`                      | MANAGER, ADMIN | Create a **PENDING** offer for a `CREATED` work order. |
+| GET    | `/`                      | MANAGER, ADMIN, TECHNICIAN | List assignments (`status`, `workOrderId`, `technicianId`); techs see only their own. |
+| GET    | `/:assignmentId`         | MANAGER, ADMIN, TECHNICIAN | Single assignment (own-only for technicians). |
+| PATCH  | `/:assignmentId/accept`  | TECHNICIAN | Accept the offer (own only). See rules below. |
+| PATCH  | `/:assignmentId/reject`  | TECHNICIAN | Reject the offer (own only); work order stays `CREATED`. |
+| DELETE | `/:assignmentId`         | MANAGER, ADMIN | Remove assignment (only before work starts). |
 
 **Create assignment body:**
 
@@ -408,18 +422,23 @@ Business rules (`assignment.service.ts`):
 - Work order must be `CREATED`.
 - Technician must not be `OFFLINE`.
 - A work order can have only one `ACCEPTED` assignment.
-- On creation the assignment is immediately **`ACCEPTED`** and the work order
-  becomes `ASSIGNED` with `technicianId` set (transactionally).
-- Deleting an assignment resets the work order to `CREATED` (technician null),
-  but fails once work is `IN_PROGRESS`/`COMPLETED`/`CANCELLED`.
+- On creation the assignment is recorded as **`PENDING`**; the work order stays
+  `CREATED`.
+- On **accept** (transactionally): assignment → `ACCEPTED` (`respondedAt` set),
+  work order → `ASSIGNED` with `technicianId` set, and any other `PENDING`
+  offers for the same work order are auto-rejected.
+- On **reject**: assignment → `REJECTED`; work order remains `CREATED`.
+- Deleting an assignment resets the work order to `CREATED` (technician null)
+  if it is still `CREATED`/`ASSIGNED`, but fails once work is
+  `IN_PROGRESS`/`COMPLETED`/`CANCELLED`.
 
 ### 7.9 Service Visits — `/service-visits`
 
 | Method | Path       | Roles | Description |
 | ------ | ---------- | ----- | ----------- |
 | POST   | `/`        | MANAGER, ADMIN | Schedule a visit for an `ASSIGNED` work order (conflict-checked). |
-| GET    | `/`        | MANAGER, ADMIN, TECHNICIAN | List visits (technicians only see their own). |
-| GET    | `/:visitId`| MANAGER, ADMIN, TECHNICIAN | Single visit (own-only for technicians). |
+| GET    | `/`        | MANAGER, ADMIN, TECHNICIAN, CUSTOMER | List visits (techs/customers see only their own). |
+| GET    | `/:visitId`| MANAGER, ADMIN, TECHNICIAN, CUSTOMER | Single visit (own-only for technicians/customers). |
 | PATCH  | `/:visitId`| MANAGER, ADMIN, TECHNICIAN | Update visit; technicians may only change status. |
 | DELETE | `/:visitId`| MANAGER, ADMIN | Delete a visit (not in progress/completed). |
 
@@ -462,6 +481,9 @@ Rules (`invoice.service.ts`):
 - One work order → one invoice (`workOrderId` unique).
 - Amount defaults to `actualCost ?? estimatedCost ?? service price`; body may
   override with `customerId` matching the work order's customer.
+- Additional bill line items (`POST /:invoiceId/items`, `DELETE /:invoiceId/items/:itemId`)
+  can be added/removed by MANAGER/ADMIN and by the **assigned technician** (only
+  while the invoice is `DRAFT`/`ISSUED`); the invoice amount is updated automatically.
 
 ### 7.11 Payments — `/payments`
 
@@ -513,6 +535,47 @@ Rules (`feedback.service.ts`):
 }
 ```
 
+### 7.14 Work Orders — `/work-orders`
+
+| Method | Path                    | Roles | Description |
+| ------ | ----------------------- | ----- | ----------- |
+| GET    | `/`                     | all roles | List work orders (`status`, `page`, `limit`); customers/technicians see only their own. |
+| GET    | `/:workOrderId`         | all roles | Single work order (own/assigned only). |
+| PATCH  | `/:workOrderId/status`  | MANAGER, ADMIN | Update status — only `CREATED → CANCELLED`. |
+
+Scoping (`work-order.service.ts`):
+
+- **Customer** — only work orders whose `request.customer.userId` is the caller.
+- **Technician** — only work orders assigned to the caller (`technician.userId`).
+- **Manager/Admin** — all work orders.
+
+### 7.15 Service Reports — `/service-reports`
+
+| Method | Path            | Roles | Description |
+| ------ | --------------- | ----- | ----------- |
+| POST   | `/`             | TECHNICIAN | File a report for a work order they are assigned to. |
+| GET    | `/`             | MANAGER, ADMIN, TECHNICIAN | List reports (technicians see only their own). |
+| GET    | `/:reportId`    | MANAGER, ADMIN, TECHNICIAN | Single report. |
+| PATCH  | `/:reportId`    | TECHNICIAN | Update own report. |
+
+Rules (`service-report.service.ts`):
+
+- The work order must be `COMPLETED` **and assigned to the caller**.
+- One report per work order (`workOrderId` unique → 409 on duplicate).
+- At least one of `diagnosis`, `workPerformed`, or `notes` is required; an empty
+  body returns 400.
+
+**Create report body:**
+
+```json
+{
+  "workOrderId": "<wo-id>",
+  "diagnosis": "Compressor fault; capacitor blown",
+  "workPerformed": "Replaced capacitor and recharged gas.",
+  "notes": "Reco needs follow-up in 3 months"
+}
+```
+
 ## 8. Business Flows
 
 ### 8.1 Request → Work order
@@ -525,16 +588,15 @@ Rules (`feedback.service.ts`):
 
 ### 8.2 Assignment
 
-1. Manager picks a technician for the `CREATED` work order.
-2. The assignment is recorded (status `ACCEPTED`) and the work order moves to
-   `ASSIGNED` with `technicianId` (transactional).
-3. Deleting the assignment (before work starts) returns the work order to
-   `CREATED`.
-
-> Note: the requirements document describes a technician accept/reject stage
-> (`AssignmentStatus.PENDING → ACCEPTED/REJECTED`). The current implementation
-> assigns directly as `ACCEPTED` — this is a deliberate simplification of the
-> MVP. See [§12 Backlog](#12-backlog--not-yet-implemented).
+1. Manager creates a **`PENDING`** offer for a `CREATED` work order — the work
+   order status does not change.
+2. The technician **accepts** the offer (transactional): assignment →
+   `ACCEPTED`, work order → `ASSIGNED` with `technicianId`, and any other
+   `PENDING` offers for the same work order are auto-rejected.
+3. If the technician **rejects** (or never responds), the work order remains
+   `CREATED` and the manager may pick another technician.
+4. Deleting an assignment (before work starts) returns a `CREATED`/`ASSIGNED`
+   work order to `CREATED`.
 
 ### 8.3 Service visit
 
@@ -542,6 +604,8 @@ Rules (`feedback.service.ts`):
 2. Technician starts the visit → `IN_PROGRESS` (auto `actualStart`).
 3. Technician completes the visit → `COMPLETED` (auto `actualEnd`), which in the
    same transaction completes the work order (`COMPLETED` + `completedAt`).
+4. The assigned technician files a **Service Report** for the completed work
+   order (one per work order), optionally updated later.
 
 ### 8.4 Invoice & payment
 
@@ -626,9 +690,9 @@ blob. Admin can read them via `GET /api/v1/admin/audit-logs`.
 - **Access token expiry** is a *string* pass-through (e.g. `1d`) to
   `jsonwebtoken` sign options; refresh token lives beside it (no refresh-token
   storage/rotation — refresh tokens are stateless).
-- **Req-scoped listing**: technicians only see their own assignments/visits,
-  customers only see their own requests/invoices/payments; enforced in service
-  `where` clauses (not just route guards).
+- **Req-scoped listing**: technicians only see their own assignments/visits/
+  work orders/reports, customers only see their own work orders/visits/
+  invoices/payments; enforced in service `where` clauses (not just route guards).
 - **Soft delete** on `ServiceRequest` (`deletedAt`), consulted in resource
   queries.
 - **Decimal money** fields are Prisma `Decimal`; amounts are serialized as
@@ -639,21 +703,8 @@ blob. Admin can read them via `GET /api/v1/admin/audit-logs`.
 
 ## 12. Backlog / Not Yet Implemented
 
-The schema already defines these, but **no API modules exist yet** for them:
-
-- **ServiceReport** — no `/reports` routes; reports are created implicitly only
-  via work-order completion today.
-- **Attachment / file upload** — `Attachment` model exists but there is no
-  upload endpoint or storage integration (Cloudinary credentials are configured
-  but unused).
-- **Work-Order-centric endpoints** — work orders are currently created and
-  mutated indirectly (approve, assignment, visit). There is no dedicated
-  `/work-orders` controller for listing/updating work orders directly.
-- **Technician accept/reject assignment** — assignments are created as
-  `ACCEPTED` directly (see [§8.2](#82-assignment)).
 - **Logout endpoint** — refresh-token invalidation is not implemented.
 
 Also per the MVP scope in `PROJECT_REQUIREMENTS.md`, the following are **out of
 scope** for now: GPS tracking, auto-matching, push/SMS/WhatsApp notifications,
-tax/discounts, complex invoice line items, multi-address customers, real-time
-chat, and advanced analytics.
+tax/discounts, multi-address customers, real-time chat, and advanced analytics.

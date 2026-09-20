@@ -5,10 +5,7 @@ import { sendResponse } from "../../utils/sendResponse";
 import { technicianService } from "./technician.service";
 
 const applyAsTechnician = catchAsync(async (req: Request, res: Response) => {
-	const data = await technicianService.applyAsTechnician(
-		req.body,
-		req.user!,
-	);
+	const data = await technicianService.applyAsTechnician(req.body, req.user!);
 	sendResponse(res, {
 		statusCode: httpStatus.CREATED,
 		success: true,
@@ -58,7 +55,8 @@ const approveTechnician = catchAsync(async (req: Request, res: Response) => {
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
 		success: true,
-		message: "Technician application approved. User role updated to TECHNICIAN.",
+		message:
+			"Technician application approved. User role updated to TECHNICIAN.",
 		data,
 	});
 });

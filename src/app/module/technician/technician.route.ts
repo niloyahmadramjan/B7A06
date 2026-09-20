@@ -1,31 +1,13 @@
-import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
-import httpStatus from "http-status";
 import { UserRole } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
-import { AppError } from "../../utils/AppError";
+import { validate } from "../../middleware/validate";
 import { technicianController } from "./technician.controller";
 import {
 	applyTechnicianSchema,
 	rejectTechnicianSchema,
 	updateTechnicianSchema,
 } from "./technician.validation";
-
-const validate =
-	(schema: any) => (req: Request, _res: Response, next: NextFunction) => {
-		const result = schema.safeParse(req.body);
-		if (!result.success)
-			return next(
-				new AppError(
-					httpStatus.BAD_REQUEST,
-					result.error.issues
-						.map((issue: { message: string }) => issue.message)
-						.join(", "),
-				),
-			);
-		req.body = result.data;
-		next();
-	};
 
 const router = Router();
 

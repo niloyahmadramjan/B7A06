@@ -1,8 +1,8 @@
+import HttpStatus from "http-status";
 import type { ServiceWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import type { IQuery, servicePayload } from "./service.interface";
-import HttpStatus from "http-status";
 
 const serviceCreate = async (servicePayload: servicePayload) => {
 	const existingService = await prisma.service.findFirst({

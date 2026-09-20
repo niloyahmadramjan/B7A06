@@ -2,16 +2,11 @@ import { Router } from "express";
 import { UserRole } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
 import { validate } from "../../middleware/validate";
-import { feedbackController } from "./feedback.controller";
-import { createFeedbackSchema } from "./feedback.validation";
+import { workOrderController } from "./work-order.controller";
+import { updateWorkOrderStatusSchema } from "./work-order.validation";
 
 const router = Router();
-router.post(
-	"/",
-	auth(UserRole.CUSTOMER),
-	validate(createFeedbackSchema),
-	feedbackController.createFeedback,
-);
+
 router.get(
 	"/",
 	auth(
@@ -20,17 +15,25 @@ router.get(
 		UserRole.CUSTOMER,
 		UserRole.TECHNICIAN,
 	),
-	feedbackController.getAllFeedbacks,
-);
-router.get(
-	"/:feedbackId",
-	auth(
-		UserRole.MANAGER,
-		UserRole.ADMIN,
-		UserRole.CUSTOMER,
-		UserRole.TECHNICIAN,
-	),
-	feedbackController.getFeedbackById,
+	workOrderController.getAllWorkOrders,
 );
 
-export const feedbackRouter = router;
+router.get(
+	"/:workOrderId",
+	auth(
+		UserRole.MANAGER,
+		UserRole.ADMIN,
+		UserRole.CUSTOMER,
+		UserRole.TECHNICIAN,
+	),
+	workOrderController.getWorkOrderById,
+);
+
+router.patch(
+	"/:workOrderId/status",
+	auth(UserRole.MANAGER, UserRole.ADMIN),
+	validate(updateWorkOrderStatusSchema),
+	workOrderController.updateWorkOrderStatus,
+);
+
+export const workOrderRouter = router;

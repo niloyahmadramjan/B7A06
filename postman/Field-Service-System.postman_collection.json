@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Field Service System API",
-		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Assignments (Manager assigns technician) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed) -> Invoices (Manager issues) -> Payments (initiate via /payments/initiate or /payments/:invoiceId/pay, then bKash redirect/webhook) -> Feedbacks (Customer reviews the completed + paid work order) -> Admin (users, roles, dashboard stats, audit logs). Users can read/update their own profile at /users/me. The core resource is exposed at /resources (CRUD + search + soft delete + assign/status/cancel/my-assigned). Completing a visit auto-completes the work order. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects. Attachments (Customer uploads photos against their own Service Request, Technician attaches before/after photos to their assigned Work Order) are handled under Attachments.",
+		"description": "Complete API collection for the Field Service System. Run Register/Login first to save the access and refresh tokens as collection variables, then run each folder in flow order: Services -> Service Requests (Customer creates, Manager approves/rejects) -> Work Orders (view by all roles; Customer sees only own, Technician only assigned) -> Assignments (Manager creates a PENDING offer; Technician accepts/rejects via /accept or /reject — accepting assigns the work order, rejecting leaves it CREATED) -> Service Visits (Schedule, Technician Arrives/Starts, Work Completed; Customer can view own visits) -> Service Reports (Technician files one per COMPLETED work order) -> Invoices (Manager issues; Manager/Technician add cost items) -> Payments (initiate via /payments/initiate or /payments/:invoiceId/pay, then bKash redirect/webhook) -> Feedbacks (Customer reviews the completed + paid work order) -> Admin (users, roles, dashboard stats, audit logs). Users can read/update their own profile at /users/me. The core resource is exposed at /resources (CRUD + search + soft delete + assign/status/cancel/my-assigned). Completing a visit auto-completes the work order. Resource IDs are captured automatically via test scripts. Applicants register as customers, apply via Technicians -> Apply as Technician, then an Admin/Manager approves or rejects. Attachments (Customer uploads photos against their own Service Request, Technician attaches before/after photos to their assigned Work Order) are handled under Attachments.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -71,6 +71,10 @@
 		},
 		{
 			"key": "invoiceItemId",
+			"value": ""
+		},
+		{
+			"key": "reportId",
 			"value": ""
 		}
 	],
@@ -1027,8 +1031,93 @@
 			]
 		},
 		{
+			"name": "Work Orders",
+			"description": "View by all authenticated roles (Customer sees only own via their Service Request, Technician sees only assigned). PATCH /status by Admin/Manager only and only CREATED -> CANCELLED.",
+			"item": [
+				{
+					"name": "Get All Work Orders",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const data = pm.response.json().data;",
+									"  const list = Array.isArray(data) ? data : data.items;",
+									"  if (list && list.length) {",
+									"    pm.collectionVariables.set('workOrderId', list[0].id);",
+									"    pm.collectionVariables.set('customerId', list[0].customerId || list[0].customer?.id || '');",
+									"    pm.collectionVariables.set('technicianId', list[0].technicianId || list[0].technician?.id || '');",
+									"  }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/work-orders?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Work Order By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/work-orders/{{workOrderId}}"
+					}
+				},
+				{
+					"name": "Update Work Order Status (CREATED -> CANCELLED, Admin/Manager)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  pm.collectionVariables.set('workOrderId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"CANCELLED\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/work-orders/{{workOrderId}}/status"
+					}
+				}
+			]
+		},
+		{
 			"name": "Assignments",
-			"description": "Create/Delete by Admin/Manager, view by Admin/Manager/Technician. Assignment is direct: creating an assignment immediately assigns the work order (no accept/reject step).",
+			"description": "Create by Admin/Manager (creates a PENDING offer against an existing work order), view by Admin/Manager/Technician (technician sees only own). The technician accepts or rejects the offer; accepting assigns the work order (status ASSIGNED) and auto-rejects other pending offers, rejecting leaves the work order CREATED. Delete by Admin/Manager (cannot delete an ACCEPTED assignment once the work is started).",
 			"item": [
 				{
 					"name": "Create Assignment",
@@ -1088,6 +1177,32 @@
 							}
 						],
 						"url": "{{baseUrl}}/api/v1/assignments/{{assignmentId}}"
+					}
+				},
+				{
+					"name": "Accept Assignment (Technician)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/assignments/{{assignmentId}}/accept"
+					}
+				},
+				{
+					"name": "Reject Assignment (Technician)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/assignments/{{assignmentId}}/reject"
 					}
 				},
 				{
@@ -1222,6 +1337,93 @@
 							}
 						],
 						"url": "{{baseUrl}}/api/v1/service-visits/{{visitId}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Reports",
+			"description": "Created/updated by the assigned Technician against a COMPLETED work order (one report per work order). View by Admin/Manager/Technician (technician sees only own).",
+			"item": [
+				{
+					"name": "Create Service Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  pm.collectionVariables.set('reportId', pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"diagnosis\": \"Compressor fault; capacitor blown\",\n  \"workPerformed\": \"Replaced capacitor and recharged gas.\",\n  \"notes\": \"Needs follow-up in 3 months\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/service-reports"
+					}
+				},
+				{
+					"name": "Get All Service Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/service-reports?page=1&limit=10"
+					}
+				},
+				{
+					"name": "Get Service Report By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/api/v1/service-reports/{{reportId}}"
+					}
+				},
+				{
+					"name": "Update Service Report (Technician)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"diagnosis\": \"Compressor fault; capacitor blown — replaced\",\n  \"notes\": \"Follow-up in 6 months\"\n}"
+						},
+						"url": "{{baseUrl}}/api/v1/service-reports/{{reportId}}"
 					}
 				}
 			]

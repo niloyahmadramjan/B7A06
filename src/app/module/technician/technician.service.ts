@@ -1,27 +1,24 @@
 import httpStatus from "http-status";
-import type { TechnicianWhereInput } from "../../../generated/prisma/models";
 import {
-  TechnicianApplicationStatus,
-  UserRole,
+	TechnicianApplicationStatus,
+	UserRole,
 } from "../../../generated/prisma/enums";
+import type { TechnicianWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
 import type { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
 import type {
-  IApplyTechnician,
-  ITechnicianQuery,
-  IUpdateTechnician,
+	IApplyTechnician,
+	ITechnicianQuery,
+	IUpdateTechnician,
 } from "./technician.interface";
 
 const includeUser = { user: { omit: { passwordHash: true } } } as const;
 
 const generateTechnicianId = () => {
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/\D/g, "")
-    .slice(0, 14);
+	const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
 
-  return `TECH-${timestamp}`;
+	return `TECH-${timestamp}`;
 };
 
 const applyAsTechnician = async (
@@ -33,21 +30,14 @@ const applyAsTechnician = async (
 	});
 
 	if (existing) {
-		if (
-			existing.applicationStatus === TechnicianApplicationStatus.PENDING
-		) {
+		if (existing.applicationStatus === TechnicianApplicationStatus.PENDING) {
 			throw new AppError(
 				httpStatus.CONFLICT,
 				"You already have a pending technician application",
 			);
 		}
-		if (
-			existing.applicationStatus === TechnicianApplicationStatus.APPROVED
-		) {
-			throw new AppError(
-				httpStatus.CONFLICT,
-				"You are already a technician",
-			);
+		if (existing.applicationStatus === TechnicianApplicationStatus.APPROVED) {
+			throw new AppError(httpStatus.CONFLICT, "You are already a technician");
 		}
 
 		return prisma.technician.update({
@@ -70,7 +60,6 @@ const applyAsTechnician = async (
 			bio: payload.bio,
 		},
 		include: includeUser,
-		
 	});
 };
 
@@ -81,10 +70,7 @@ const getMyApplication = async (user: RequestUser) => {
 	});
 
 	if (!tech) {
-		throw new AppError(
-			httpStatus.NOT_FOUND,
-			"No technician application found",
-		);
+		throw new AppError(httpStatus.NOT_FOUND, "No technician application found");
 	}
 
 	return tech;
@@ -184,9 +170,7 @@ const approveTechnician = async (id: string) => {
 		);
 	}
 
-	if (
-		tech.applicationStatus !== TechnicianApplicationStatus.PENDING
-	) {
+	if (tech.applicationStatus !== TechnicianApplicationStatus.PENDING) {
 		throw new AppError(
 			httpStatus.BAD_REQUEST,
 			"Only pending applications can be approved",
@@ -217,9 +201,7 @@ const rejectTechnician = async (id: string, reason?: string) => {
 		);
 	}
 
-	if (
-		tech.applicationStatus !== TechnicianApplicationStatus.PENDING
-	) {
+	if (tech.applicationStatus !== TechnicianApplicationStatus.PENDING) {
 		throw new AppError(
 			httpStatus.BAD_REQUEST,
 			"Only pending applications can be rejected",

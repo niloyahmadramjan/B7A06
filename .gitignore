@@ -16,3 +16,4 @@ pnpm-workspace.yaml
 .agents
 .codex
 disk
+.vercel

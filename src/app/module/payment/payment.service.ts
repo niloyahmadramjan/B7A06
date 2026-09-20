@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import httpStatus from "http-status";
+import type { Prisma } from "../../../generated/prisma/client";
 import {
 	InvoiceStatus,
 	PaymentMethod,
@@ -13,7 +14,7 @@ import { prisma } from "../../lib/prisma";
 import type { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
 import { recordAuditLog } from "../../utils/auditLog";
-import type { IPaymentQuery } from "./payment.interface";
+import type { IBkashGatewayResponse, IPaymentQuery } from "./payment.interface";
 
 const include = {
 	invoice: {
@@ -157,7 +158,7 @@ const getInvoiceForPayment = async (invoiceId: string, user: RequestUser) => {
 const queryBkashTransaction = async (
 	paymentID: string,
 	bkashIdToken: string,
-): Promise<Record<string, any>> => {
+): Promise<IBkashGatewayResponse> => {
 	const response = await fetch(
 		`${config.bkash_base_url}/tokenized/checkout/payment/status`,
 		{
@@ -192,7 +193,7 @@ const parseBkashDate = (value?: string) => {
 const settlePayment = async (
 	paymentId: string,
 	invoiceId: string,
-	gatewayResponse: Record<string, any>,
+	gatewayResponse: IBkashGatewayResponse,
 ) => {
 	await prisma.$transaction([
 		prisma.payment.update({
@@ -201,7 +202,7 @@ const settlePayment = async (
 				status: PaymentStatus.SUCCESS,
 				transactionId: gatewayResponse.trxID,
 				paidAt: parseBkashDate(gatewayResponse.paymentExecuteTime),
-				gatewayResponse,
+				gatewayResponse: gatewayResponse as Prisma.InputJsonValue,
 			},
 		}),
 		prisma.invoice.update({
@@ -272,7 +273,8 @@ const payInvoice = async (invoiceId: string, user: RequestUser) => {
 		},
 	);
 
-	const gatewayResponse = await createResponse.json();
+	const gatewayResponse =
+		(await createResponse.json()) as IBkashGatewayResponse;
 
 	if (!createResponse.ok || !gatewayResponse.bkashURL) {
 		throw new AppError(
@@ -289,7 +291,7 @@ const payInvoice = async (invoiceId: string, user: RequestUser) => {
 			status: PaymentStatus.PENDING,
 			merchantInvoiceNumber,
 			gatewayPaymentId: gatewayResponse.paymentID,
-			gatewayResponse,
+			gatewayResponse: gatewayResponse as Prisma.InputJsonValue,
 		},
 	});
 
@@ -299,7 +301,7 @@ const payInvoice = async (invoiceId: string, user: RequestUser) => {
 	};
 };
 
-const paymentCallback = async (query: Record<string, any>) => {
+const paymentCallback = async (query: IBkashGatewayResponse) => {
 	const gatewayPaymentId = query.paymentID;
 	const status = (query.status as string)?.toLowerCase();
 
@@ -348,7 +350,8 @@ const paymentCallback = async (query: Record<string, any>) => {
 			},
 		);
 
-		const executedPaymentResult = await executeResponse.json();
+		const executedPaymentResult =
+			(await executeResponse.json()) as IBkashGatewayResponse;
 
 		if (executeResponse.ok && executedPaymentResult?.statusCode === "0000") {
 			await settlePayment(payment.id, payment.invoiceId, executedPaymentResult);
@@ -386,7 +389,7 @@ const paymentCallback = async (query: Record<string, any>) => {
 			where: { id: payment.id },
 			data: {
 				status: PaymentStatus.FAILED,
-				gatewayResponse: executedPaymentResult,
+				gatewayResponse: executedPaymentResult as Prisma.InputJsonValue,
 			},
 		});
 
@@ -401,7 +404,7 @@ const paymentCallback = async (query: Record<string, any>) => {
 			where: { id: payment.id },
 			data: {
 				status: PaymentStatus.FAILED,
-				gatewayResponse: query,
+				gatewayResponse: query as Prisma.InputJsonValue,
 			},
 		});
 

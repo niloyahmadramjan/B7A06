@@ -12,19 +12,19 @@ const createToken = (
 	return token;
 };
 
-const verifyToken = (token: string, secret: string) => {
+type VerifyTokenResult =
+	| { success: true; data: JwtPayload | string }
+	| { success: false; error: string };
+
+const verifyToken = (token: string, secret: string): VerifyTokenResult => {
 	try {
 		const verifiedToken = jwt.verify(token, secret);
-		return {
-			success: true,
-			data: verifiedToken,
-		};
-	} catch (error: any) {
+		return { success: true as const, data: verifiedToken };
+	} catch (error: unknown) {
 		console.log("Token verification failed:", error);
-		return {
-			success: false,
-			error: error.message,
-		};
+		const message =
+			error instanceof Error ? error.message : "Token verification failed";
+		return { success: false as const, error: message };
 	}
 };
 

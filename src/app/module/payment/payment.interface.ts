@@ -12,5 +12,17 @@ export interface IPaymentQuery {
 	limit?: string;
 	sortBy?: string;
 	sortOrder?: string;
-	[key: string]: any;
+	[key: string]: unknown;
+}
+
+export interface IBkashGatewayResponse {
+	statusCode?: string;
+	statusMessage?: string;
+	paymentID?: string;
+	bkashURL?: string;
+	trxID?: string;
+	amount?: string;
+	transactionStatus?: string;
+	paymentExecuteTime?: string;
+	[key: string]: unknown;
 }

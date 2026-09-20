@@ -1,3 +1,4 @@
+import type { Prisma } from "../../generated/prisma/client";
 import { prisma } from "../lib/prisma";
 
 export interface IAuditLogPayload {
@@ -5,7 +6,7 @@ export interface IAuditLogPayload {
 	action: string;
 	entity: string;
 	entityId?: string | null;
-	changes?: Record<string, any>;
+	changes?: Prisma.InputJsonValue;
 }
 
 export const recordAuditLog = async (payload: IAuditLogPayload) => {

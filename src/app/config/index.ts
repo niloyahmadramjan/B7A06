@@ -31,12 +31,6 @@ export default {
 	customer_email: process.env.CUSTOMER_EMAIL!,
 	customer_pass: process.env.CUSTOMER_PASS!,
 
-	patian_email: process.env.PATIANT_EMAIL!,
-	patian_pass: process.env.PATIANT_PASS!,
-
-	doctor_email: process.env.DOCTOR_EMAIL!,
-	doctor_pass: process.env.DOCTOR_PASS!,
-
 	// REDIS CONFIG
 	redis_user_name: process.env.REDIS_USER_NAME!,
 	redis_pass: process.env.REDIS_PASS!,

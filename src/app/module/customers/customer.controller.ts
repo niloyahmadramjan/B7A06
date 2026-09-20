@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
-import { catchAsync } from "../../utils/catchAsync";
-import { customerService } from "./customer.service";
-import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
+import { catchAsync } from "../../utils/catchAsync";
+import { sendResponse } from "../../utils/sendResponse";
+import { customerService } from "./customer.service";
 
 const getCustomerProfile = catchAsync(async (req: Request, res: Response) => {
 	const id = req.user?.userId;

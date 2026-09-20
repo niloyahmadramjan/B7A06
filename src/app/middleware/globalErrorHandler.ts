@@ -4,9 +4,8 @@ import { Prisma } from "../../generated/prisma/client";
 import config from "../config";
 import { AppError } from "../utils/AppError";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const globalErrorHandler = async (
-	err: any,
+	err: unknown,
 	_req: Request,
 	res: Response,
 	_next: NextFunction,
@@ -16,9 +15,8 @@ export const globalErrorHandler = async (
 	}
 
 	let statusCode: number = httpStatus.INTERNAL_SERVER_ERROR;
-	let errorMessage = err.message || "Internal Server Error";
-	const errorName = err.name || "Internal Server Error";
-	// let errorDetails = err.stack
+	let errorMessage = "Internal Server Error";
+	let errorName = "Internal Server Error";
 
 	if (err instanceof AppError) {
 		statusCode = err.statusCode;
@@ -52,6 +50,7 @@ export const globalErrorHandler = async (
 		errorMessage = "Error occurred during query execution";
 	} else if (err instanceof Error) {
 		errorMessage = err.message;
+		errorName = err.name;
 	}
 
 	res.status(statusCode).json({
@@ -64,6 +63,9 @@ export const globalErrorHandler = async (
 				? errorMessage
 				: "Internal Server Error",
 		error: config.node_env === "development" ? err : undefined,
-		stack: config.node_env === "development" ? err.stack : undefined,
+		stack:
+			config.node_env === "development" && err instanceof Error
+				? err.stack
+				: undefined,
 	});
 };

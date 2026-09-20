@@ -44,10 +44,11 @@ The system supports four roles — **Admin**, **Manager**, **Technician**, and
 - **Service catalog** — CRUD for services
 - **Service requests** — customers create, update, and track requests
 - **Request review** — managers approve/reject requests; approval auto-generates a work order
-- **Work orders** — lifecycle `CREATED → ASSIGNED → IN_PROGRESS → COMPLETED` (or `CANCELLED`)
+- **Work orders** — lifecycle `CREATED → ASSIGNED → IN_PROGRESS → COMPLETED` (or `CANCELLED`); customers and technicians see only their own
 - **Technician management** — customers can apply to become technicians; admins approve/reject applications
-- **Technician assignment** — manager assigns a technician to a work order, with conflict safeguards
-- **Service visits** — scheduling with conflict detection, plus start/complete transitions
+- **Technician assignment** — manager creates a PENDING offer; the technician accepts or rejects it (accepting assigns the work order and auto-rejects other pending offers)
+- **Service visits** — scheduling with conflict detection, plus start/complete transitions; customers can view their own visits
+- **Service reports** — the assigned technician files a report once the work order is completed (one per work order)
 - **Invoicing** — invoices per completed work order, lifecycle `DRAFT → ISSUED → PAID` (or `CANCELLED`)
 - **Payments** — customer-initiated bKash payment flow with callback + webhook style follow-up
 - **Feedback** — customers rate completed (and paid) work orders on a 1–5 scale
@@ -76,8 +77,8 @@ The system supports four roles — **Admin**, **Manager**, **Technician**, and
 | ----------- | -------------------------------------------------------------------------------------------------------- |
 | **ADMIN**   | Manage users & roles, manage services, review everything, view stats and audit logs                       |
 | **MANAGER** | Review/approve/reject requests, create work orders, assign technicians, schedule visits, create invoices  |
-| **TECHNICIAN** | View assignments and scheduled visits, update work/visit status, access assigned work                    |
-| **CUSTOMER**  | Register/login, browse services, create & track requests, view invoices, pay, leave feedback             |
+| **TECHNICIAN** | Review offers, accept/reject assignments, view assigned work orders & scheduled visits, update work/visit status, file service reports, manage costs on own invoices |
+| **CUSTOMER**  | Register/login, browse services, create & track requests, view own work orders, visits & invoices, pay, leave feedback |
 
 ## System Flow
 
@@ -91,14 +92,19 @@ Manager review ── rejected ──► Request closed (REJECTED)
       ▼
 Work Order (CREATED)
       │
-      ▼ create assignment
-Technician Assignment (assignedBy manager)
+      ▼ create assignment (PENDING offer)
+Technician Assignment ── rejection (or no response) ──► Work Order stays CREATED
       │
-      ▼
+      ▼ technician accepts
+Work Order → ASSIGNED
+      │
+      ▼ schedule
 Service Visit (SCHEDULED)
       │
       ▼ technician starts / completes
 Work Order IN_PROGRESS → COMPLETED
+      │
+      ├──► Technician files Service Report
       │
       ├──► Invoice (DRAFT → ISSUED)
       │         │
@@ -234,6 +240,7 @@ change them in `.env` and re-seed to use your own.
 │           ├── auth/  users/  customers/
 │           ├── service/  request/  resource/
 │           ├── technician/  assignment/  service-visit/
+│           ├── work-order/  service-report/
 │           ├── invoice/  payment/  feedback/
 │           └── admin/
 ├── PROJECT_REQUIREMENTS.md
@@ -280,8 +287,10 @@ All endpoints are prefixed with `/api/v1`.
 | Services        | `/api/v1/service`      | Service catalog CRUD                              |
 | Requests        | `/api/v1/request`      | Customer requests + manager review/approve/reject |
 | Resources       | `/api/v1/resources`    | Request-management surface (assign/status/soft-delete) |
-| Assignments     | `/api/v1/assignments`  | Technician assignment to work orders              |
-| Service Visits  | `/api/v1/service-visits` | Schedule & run field visits                     |
+| Assignments     | `/api/v1/assignments`  | PENDING offers; technician accept/reject; view/delete            |
+| Service Visits  | `/api/v1/service-visits` | Schedule & run field visits (customers view own)              |
+| Work Orders     | `/api/v1/work-orders` | View work orders (role-scoped); manager/admin status manage      |
+| Service Reports | `/api/v1/service-reports` | Technician files/updates a report per completed work order  |
 | Invoices        | `/api/v1/invoices`     | Invoice CRUD (per completed work order)           |
 | Payments        | `/api/v1/payments`     | bKash initiate, pay, callback, webhook, list      |
 | Feedbacks       | `/api/v1/feedbacks`    | Customer ratings/comments                         |

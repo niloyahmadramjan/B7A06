@@ -21,9 +21,11 @@ import { paymentRouter } from "./app/module/payment/payment.router";
 import { requestRouter } from "./app/module/request/request.route";
 import { resourceRouter } from "./app/module/resource/resource.route";
 import { ServiceRouter } from "./app/module/service/service.route";
+import { serviceReportRouter } from "./app/module/service-report/service-report.route";
 import { serviceVisitRouter } from "./app/module/service-visit/service-visit.route";
 import { technicianRouter } from "./app/module/technician/technician.route";
 import { UsersRouter } from "./app/module/users/user.route";
+import { workOrderRouter } from "./app/module/work-order/work-order.route";
 
 const app: Application = express();
 
@@ -54,6 +56,8 @@ app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/feedbacks", feedbackRouter);
 app.use("/api/v1/users", UsersRouter);
 app.use("/api/v1/resources", resourceRouter);
+app.use("/api/v1/work-orders", workOrderRouter);
+app.use("/api/v1/service-reports", serviceReportRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/admin", adminRouter);
 
