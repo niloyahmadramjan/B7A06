@@ -22,4 +22,10 @@ const main = async () => {
 	}
 };
 
-main();
+// When deployed on Vercel, this module IS the serverless handler (default export).
+// The long-running HTTP bootstrap above only runs outside the Vercel runtime.
+if (process.env.VERCEL !== "1") {
+	main();
+}
+
+export default app;

@@ -65,7 +65,7 @@ app.use("/api/v1/admin", adminRouter);
 app.get("/", async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({
 		success: true,
-		message: "User Authentication API is running",
+		message: "Welcome to the Field Service Management System API",
 	});
 });
 
