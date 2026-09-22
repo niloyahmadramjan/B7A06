@@ -10,7 +10,7 @@ The system supports four roles — **Admin**, **Manager**, **Technician**, and
 > **Documentation**
 >
 > * [Requirements & System Flow](./PROJECT_REQUIREMENTS.md)
-> * [Implementation & API Reference](./docs/PROJECT_DOCUMENTATION.md)
+> * [Implementation & API Reference](./PROJECT_DOCUMENTATION.md)
 > * [Postman Collection](./Field-Service-System.postman_collection.json)
 > * [Database Diagram (DrawSQL)](https://drawsql.app/teams/ramjan/diagrams/service-field-backend)
 > * [API Documentation (Postman)](https://documenter.getpostman.com/view/48383402/2sBYB1PoUr)
