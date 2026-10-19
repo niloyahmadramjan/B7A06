@@ -72,6 +72,18 @@ const allServices = async (query: IQuery) => {
 	};
 };
 
+const getServiceById = async (id: string) => {
+	const existingService = await prisma.service.findUnique({
+		where: {
+			id,
+		},
+	});
+	if (!existingService) {
+		throw new AppError(HttpStatus.NOT_FOUND, "oops service not found");
+	}
+	return existingService;
+};	
+
 const updateService = async (payload: servicePayload, id: string) => {
 	const existingService = await prisma.service.findUnique({
 		where: {
@@ -113,6 +125,7 @@ const deleteService = async (id: string) => {
 export const serviceServices = {
 	serviceCreate,
 	allServices,
+	getServiceById,
 	updateService,
 	deleteService,
 };

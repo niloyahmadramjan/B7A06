@@ -28,6 +28,18 @@ const allService = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const getServiceById = catchAsync(async (req: Request, res: Response) => {
+	const serviceId = req.params.serviceId as string;
+	const result = await serviceServices.getServiceById(serviceId);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Retrived the services data successfully",
+		data: result,
+	});
+});
+
 const updateService = catchAsync(async (req: Request, res: Response) => {
 	const serviceId = req.params.serviceId as string;
 	const payload = req.body;
@@ -56,6 +68,7 @@ const deleteServie = catchAsync(async (req: Request, res: Response) => {
 export const serviceController = {
 	createService,
 	allService,
+	getServiceById,
 	updateService,
 	deleteServie,
 };
