@@ -19,6 +19,12 @@ router.get(
 );
 
 router.get(
+	"/my-work-orders",
+	auth(UserRole.TECHNICIAN),
+	workOrderController.getTechnicianWorkOrders,
+);	
+
+router.get(
 	"/:workOrderId",
 	auth(
 		UserRole.MANAGER,
@@ -31,7 +37,7 @@ router.get(
 
 router.patch(
 	"/:workOrderId/status",
-	auth(UserRole.MANAGER, UserRole.ADMIN),
+	auth(UserRole.MANAGER, UserRole.ADMIN, UserRole.TECHNICIAN),
 	validate(updateWorkOrderStatusSchema),
 	workOrderController.updateWorkOrderStatus,
 );

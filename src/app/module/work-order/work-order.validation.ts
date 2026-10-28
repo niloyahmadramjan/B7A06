@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { WorkOrderStatus } from "../../../generated/prisma/enums";
 
 export const updateWorkOrderStatusSchema = z
-	.object({
-		status: z.enum(["CANCELLED"], "Only CANCELLED status can be set"),
-	})
-	.strict();
+  .object({
+    status: z.enum(WorkOrderStatus),
+  })
+  .strict();

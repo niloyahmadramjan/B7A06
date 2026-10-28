@@ -35,6 +35,16 @@ const getAssignmentById = catchAsync(async (req: Request, res: Response) => {
 		data,
 	});
 });
+
+// const getTechnicianAssignments = catchAsync(async (req: Request, res: Response) => {
+// 	const data = await assignmentService.getTecnicianAssignments(req.user!);
+// 	sendResponse(res, {
+// 		statusCode: httpStatus.OK,
+// 		success: true,
+// 		message: "Technician assignments retrieved successfully",
+// 		data,
+// 	});
+// });	
 const acceptAssignment = catchAsync(async (req: Request, res: Response) => {
 	const data = await assignmentService.respondToAssignment(
 		req.params.assignmentId as string,
@@ -79,4 +89,5 @@ export const assignmentController = {
 	acceptAssignment,
 	rejectAssignment,
 	deleteAssignment,
+	// getTechnicianAssignments,
 };
