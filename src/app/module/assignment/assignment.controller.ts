@@ -44,7 +44,7 @@ const getAssignmentById = catchAsync(async (req: Request, res: Response) => {
 // 		message: "Technician assignments retrieved successfully",
 // 		data,
 // 	});
-// });	
+// });
 const acceptAssignment = catchAsync(async (req: Request, res: Response) => {
 	const data = await assignmentService.respondToAssignment(
 		req.params.assignmentId as string,

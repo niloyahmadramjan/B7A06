@@ -8,14 +8,14 @@ const router = Router();
 router.post("/register", AuthController.registerUser);
 router.post("/login", AuthController.loginUser);
 router.get(
-  "/me",
-  auth(
-    UserRole.CUSTOMER,
-    UserRole.TECHNICIAN,
-    UserRole.MANAGER,
-    UserRole.ADMIN,
-  ),
-  AuthController.getMe,
+	"/me",
+	auth(
+		UserRole.CUSTOMER,
+		UserRole.TECHNICIAN,
+		UserRole.MANAGER,
+		UserRole.ADMIN,
+	),
+	AuthController.getMe,
 );
 router.post("/refresh-token", AuthController.refreshToken);
 router.get("/logout", AuthController.logoutUser);

@@ -82,7 +82,7 @@ const getServiceById = async (id: string) => {
 		throw new AppError(HttpStatus.NOT_FOUND, "oops service not found");
 	}
 	return existingService;
-};	
+};
 
 const updateService = async (payload: servicePayload, id: string) => {
 	const existingService = await prisma.service.findUnique({

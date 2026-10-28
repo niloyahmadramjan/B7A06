@@ -22,7 +22,7 @@ router.get(
 	"/my-work-orders",
 	auth(UserRole.TECHNICIAN),
 	workOrderController.getTechnicianWorkOrders,
-);	
+);
 
 router.get(
 	"/:workOrderId",

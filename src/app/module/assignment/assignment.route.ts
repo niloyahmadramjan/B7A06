@@ -23,7 +23,6 @@ router.get(
 // 	assignmentController.getTechnicianAssignments,
 // );
 
-
 router.get(
 	"/:assignmentId",
 	auth(UserRole.MANAGER, UserRole.ADMIN, UserRole.TECHNICIAN),
